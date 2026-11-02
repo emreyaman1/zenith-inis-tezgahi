@@ -1,0 +1,747 @@
+{
+ "testler": [
+  {
+   "ad": "T1  0.2 m/s  duz",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 47.786811932301276,
+     "python": 47.786811932301276,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 16.028516041247656,
+     "python": 16.028516041247656,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 1203.098941156898,
+     "python": 1203.098941156898,
+     "hata": 0
+    },
+    "N_max_N": {
+     "js": 392.0839394690531,
+     "python": 392.0839394690531,
+     "hata": 0
+    },
+    "Ft_max_N": {
+     "js": 9.409820625945652e-13,
+     "python": 9.177991392292317e-13,
+     "hata": 0.0023182923365333567
+    },
+    "ivme_max_g": {
+     "js": 3.74825953054547,
+     "python": 3.74825953054547,
+     "hata": 0
+    },
+    "egim_max_deg": {
+     "js": 0,
+     "python": 0,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 0.0023182923365333567
+  },
+  {
+   "ad": "T2  1.5 m/s  duz",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 49.24814458910043,
+     "python": 49.24814458910043,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 16.50287376240181,
+     "python": 16.50287376240181,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 1758.9132247645016,
+     "python": 1758.9132247645011,
+     "hata": 2.5853882072400117e-14
+    },
+    "N_max_N": {
+     "js": 574.0201366576557,
+     "python": 574.0201366576556,
+     "hata": 1.9805374491490812e-14
+    },
+    "Ft_max_N": {
+     "js": 9.368313864986895e-13,
+     "python": 9.564362125193288e-13,
+     "hata": 0.001960482602063929
+    },
+    "ivme_max_g": {
+     "js": 5.4875403743026645,
+     "python": 5.487540374302664,
+     "hata": 1.6185364646414862e-14
+    },
+    "egim_max_deg": {
+     "js": 0,
+     "python": 0,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 0.001960482602063929
+  },
+  {
+   "ad": "T3  1.5 m/s  10d TEK bacak",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 56.56867199474917,
+     "python": 56.56867199474907,
+     "hata": 1.7584995280717885e-13
+    },
+    "x_max_mm": {
+     "js": 18.862064839081235,
+     "python": 18.862064839081206,
+     "hata": 1.5068185627013497e-13
+    },
+    "Fa_max_N": {
+     "js": 5394.948952358531,
+     "python": 5394.948952358443,
+     "hata": 1.6183932812196902e-12
+    },
+    "N_max_N": {
+     "js": 1744.0090508706767,
+     "python": 1744.0090508706487,
+     "hata": 1.6036018887376648e-12
+    },
+    "Ft_max_N": {
+     "js": 781.6230892317944,
+     "python": 781.6230892317819,
+     "hata": 1.5999466138684366e-12
+    },
+    "ivme_max_g": {
+     "js": 5.557482202353367,
+     "python": 5.557482202353278,
+     "hata": 1.5981669168891482e-12
+    },
+    "egim_max_deg": {
+     "js": 10.000000000000012,
+     "python": 10.000000000000012,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 1.6183932812196902e-12
+  },
+  {
+   "ad": "T4  1.5 m/s  10d IKI bacak",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 52.32637125136347,
+     "python": 52.32637125136347,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 17.498417607034877,
+     "python": 17.498417607034877,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 2800.552743128946,
+     "python": 2800.5527431289984,
+     "hata": 1.8673437049257007e-12
+    },
+    "N_max_N": {
+     "js": 910.1925065643401,
+     "python": 910.1925065643574,
+     "hata": 1.8985433530883265e-12
+    },
+    "Ft_max_N": {
+     "js": 273.0170556094636,
+     "python": 273.01705560947426,
+     "hata": 3.893426842232132e-12
+    },
+    "ivme_max_g": {
+     "js": 5.800862849216728,
+     "python": 5.800862849216798,
+     "hata": 1.2095803155522518e-12
+    },
+    "egim_max_deg": {
+     "js": 10.000000000000012,
+     "python": 10.000000000000012,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 3.893426842232132e-12
+  },
+  {
+   "ad": "T5  2.0 m/s + 0.5 m/s yanal",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 53.86881866492323,
+     "python": 53.86881866492323,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 17.995361530165553,
+     "python": 17.995361530165553,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 4192.394464803503,
+     "python": 4192.394464803504,
+     "hata": 2.1693920011783908e-14
+    },
+    "N_max_N": {
+     "js": 1358.015964029382,
+     "python": 1358.0159640293828,
+     "hata": 5.0229234736369965e-14
+    },
+    "Ft_max_N": {
+     "js": 500.3736521314947,
+     "python": 500.37365213149485,
+     "hata": 3.408058275170928e-14
+    },
+    "ivme_max_g": {
+     "js": 6.7191101325444125,
+     "python": 6.719110132544274,
+     "hata": 2.062115826947365e-12
+    },
+    "egim_max_deg": {
+     "js": 1.362297649995793,
+     "python": 1.362297649995793,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 2.062115826947365e-12
+  },
+  {
+   "ad": "T6  3.0 m/s  duz",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 51.333439972524154,
+     "python": 51.333439972524154,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 17.17783850517129,
+     "python": 17.17783850517129,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 3580.3872666745683,
+     "python": 3580.3872666745683,
+     "hata": 0
+    },
+    "N_max_N": {
+     "js": 1231.3545647161768,
+     "python": 1231.3545647161768,
+     "hata": 0
+    },
+    "Ft_max_N": {
+     "js": 9.135052503337039e-13,
+     "python": 9.569228377244947e-13,
+     "hata": 0.00434175873907908
+    },
+    "ivme_max_g": {
+     "js": 11.771552002176236,
+     "python": 11.771552002176236,
+     "hata": 0
+    },
+    "egim_max_deg": {
+     "js": 0,
+     "python": 0,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 0.00434175873907908
+  },
+  {
+   "ad": "T7  3.5 m/s  12d TEK (devrilir)",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 546.8713711837197,
+     "python": 546.8714243978858,
+     "hata": 0.000009730653991573116
+    },
+    "x_max_mm": {
+     "js": 24.386611139082152,
+     "python": 24.386611139082152,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 413366.7692644258,
+     "python": 413366.7827454547,
+     "hata": 0.000003261275328496864
+    },
+    "N_max_N": {
+     "js": 128030.12266884303,
+     "python": 128030.12684425796,
+     "hata": 0.000003261275319179403
+    },
+    "Ft_max_N": {
+     "js": 55582.48937595702,
+     "python": 55582.4856248848,
+     "hata": 0.0000067486586386682314
+    },
+    "ivme_max_g": {
+     "js": 815.9648952525253,
+     "python": 815.9649218326175,
+     "hata": 0.000003257504280175157
+    },
+    "egim_max_deg": {
+     "js": 97.21704558260355,
+     "python": 97.2170455825876,
+     "hata": 1.6401011669205115e-11
+    }
+   },
+   "devrildi": {
+    "js": true,
+    "python": true,
+    "ok": true
+   },
+   "en_buyuk_hata": 0.000009730653991573116
+  },
+  {
+   "ad": "T8  2.0 m/s  duz (tasarim)",
+   "alanlar": {
+    "strok_max_mm": {
+     "js": 50.00284274753475,
+     "python": 50.00284274753475,
+     "hata": 0
+    },
+    "x_max_mm": {
+     "js": 16.747417721685398,
+     "python": 16.747417721685398,
+     "hata": 0
+    },
+    "Fa_max_N": {
+     "js": 2208.6475513539117,
+     "python": 2208.6475513539117,
+     "hata": 0
+    },
+    "N_max_N": {
+     "js": 721.7480042446173,
+     "python": 721.7480042446173,
+     "hata": 0
+    },
+    "Ft_max_N": {
+     "js": 9.31299950683747e-13,
+     "python": 9.161883892208873e-13,
+     "hata": 0.0015111561462859719
+    },
+    "ivme_max_g": {
+     "js": 6.89979507761905,
+     "python": 6.899795077619049,
+     "hata": 1.2872533310172074e-14
+    },
+    "egim_max_deg": {
+     "js": 0,
+     "python": 0,
+     "hata": 0
+    }
+   },
+   "devrildi": {
+    "js": false,
+    "python": false,
+    "ok": true
+   },
+   "en_buyuk_hata": 0.0015111561462859719
+  }
+ ],
+ "parametre": {
+  "geometri D yatay u [mm]": {
+   "js": 215,
+   "beklenen": 215,
+   "ok": true
+  },
+  "geometri D dusey z [mm]": {
+   "js": 20,
+   "beklenen": 20,
+   "ok": true
+  },
+  "geometri A yatay u [mm]": {
+   "js": 215,
+   "beklenen": 215,
+   "ok": true
+  },
+  "geometri A dusey z [mm]": {
+   "js": 295,
+   "beklenen": 295,
+   "ok": true
+  },
+  "geometri C yatay u [mm]": {
+   "js": 301.34,
+   "beklenen": 301.34,
+   "ok": true
+  },
+  "geometri C dusey z [mm]": {
+   "js": 114.6,
+   "beklenen": 114.6,
+   "ok": true
+  },
+  "geometri F yatay u [mm]": {
+   "js": 560,
+   "beklenen": 560,
+   "ok": true
+  },
+  "geometri F dusey z [mm]": {
+   "js": -67,
+   "beklenen": -67,
+   "ok": true
+  },
+  "geometri zemin temasi z [mm]": {
+   "js": -112,
+   "beklenen": -112,
+   "ok": true
+  },
+  "geometri dusey strok [mm]": {
+   "js": 57,
+   "beklenen": 57,
+   "ok": true
+  },
+  "geometri MA_0 [-]": {
+   "js": 2.9060132965936907,
+   "beklenen": 2.9060132965936907,
+   "ok": true
+  },
+  "geometri MA_1 [-]": {
+   "js": 3.125206856315104,
+   "beklenen": 3.125206856315104,
+   "ok": true
+  },
+  "geometri amortisor acik boyu [mm]": {
+   "js": 199.9968889758038,
+   "beklenen": 199.9968889758038,
+   "ok": true
+  },
+  "geometri amortisor kapali boyu [mm]": {
+   "js": 180.9963843541113,
+   "beklenen": 180.9963843541113,
+   "ok": true
+  },
+  "geometri ayak yaricapi tam strok [mm]": {
+   "js": 569.7130618233917,
+   "beklenen": 569.7130618233917,
+   "ok": true
+  },
+  "geometri temas yaricapi tam strok [mm]": {
+   "js": 543.67004731189,
+   "beklenen": 543.67004731189,
+   "ok": true
+  },
+  "geometri gabari [mm]": {
+   "js": 1073.3745091921871,
+   "beklenen": 1073.3745091921871,
+   "ok": true
+  },
+  "geometri x(s) katsayisi a1 [-]": {
+   "js": 0.3439752172896808,
+   "beklenen": 0.3439752172896808,
+   "ok": true
+  },
+  "geometri x(s) katsayisi a2 [1/m]": {
+   "js": -0.13985809407457675,
+   "beklenen": -0.13985809407457675,
+   "ok": true
+  },
+  "geometri x(s) katsayisi a3 [1/m2]": {
+   "js": -0.8209478316550615,
+   "beklenen": -0.8209478316550615,
+   "ok": true
+  },
+  "geometri disa egim (kubbe temasi) [-]": {
+   "js": -0.28649039803701726,
+   "beklenen": -0.28649039803701726,
+   "ok": true
+  },
+  "model kutle [kg]": {
+   "js": 32,
+   "beklenen": 32,
+   "ok": true
+  },
+  "model atalet Ix [kg m2]": {
+   "js": 5.93,
+   "beklenen": 5.93,
+   "ok": true
+  },
+  "model atalet Iz [kg m2]": {
+   "js": 1.69,
+   "beklenen": 1.69,
+   "ok": true
+  },
+  "model ayak yaricapi [m]": {
+   "js": 0.56,
+   "beklenen": 0.56,
+   "ok": true
+  },
+  "model zemin temasi z [m]": {
+   "js": -0.112,
+   "beklenen": -0.112,
+   "ok": true
+  },
+  "model agirlik merkezi z [m]": {
+   "js": 0.48,
+   "beklenen": 0.48,
+   "ok": true
+  },
+  "model x(s) a1 [-]": {
+   "js": 0.3439752172896808,
+   "beklenen": 0.3439752172896808,
+   "ok": true
+  },
+  "model x(s) a2 [1/m]": {
+   "js": -0.13985809407457675,
+   "beklenen": -0.13985809407457675,
+   "ok": true
+  },
+  "model x(s) a3 [1/m2]": {
+   "js": -0.8209478316550615,
+   "beklenen": -0.8209478316550615,
+   "ok": true
+  },
+  "model dusey strok [m]": {
+   "js": 0.057,
+   "beklenen": 0.057,
+   "ok": true
+  },
+  "model disa egim [-]": {
+   "js": -0.28649039803701726,
+   "beklenen": -0.28649039803701726,
+   "ok": true
+  },
+  "model hidrolik sabit K [N s2/m2]": {
+   "js": 3333.333333333333,
+   "beklenen": 3333.333333333333,
+   "ok": true
+  },
+  "model strok S [m]": {
+   "js": 0.02,
+   "beklenen": 0.02,
+   "ok": true
+  },
+  "model delik kapanma S_h [m]": {
+   "js": 0.018000000000000002,
+   "beklenen": 0.018000000000000002,
+   "ok": true
+  },
+  "model sizinti eps [-]": {
+   "js": 0.05,
+   "beklenen": 0.05,
+   "ok": true
+  },
+  "model geri donus yayi acik [N]": {
+   "js": 8,
+   "beklenen": 8,
+   "ok": true
+  },
+  "model geri donus yayi sikisik [N]": {
+   "js": 20,
+   "beklenen": 20,
+   "ok": true
+  },
+  "model acilma direnci [N s/m]": {
+   "js": 50,
+   "beklenen": 50,
+   "ok": true
+  },
+  "model halka devreye girme [m]": {
+   "js": 0.014,
+   "beklenen": 0.014,
+   "ok": true
+  },
+  "model halka rijitligi [N/m]": {
+   "js": 514773.84548482427,
+   "beklenen": 514773.84548482427,
+   "ok": true
+  },
+  "model halka sonumu [N s/m]": {
+   "js": 2108.94429158024,
+   "beklenen": 2108.94429158024,
+   "ok": true
+  },
+  "model metal durak [m]": {
+   "js": 0.019,
+   "beklenen": 0.019,
+   "ok": true
+  },
+  "model metal durak rijitligi [N/m]": {
+   "js": 50000000,
+   "beklenen": 50000000,
+   "ok": true
+  },
+  "model metal durak sonumu [N s/m]": {
+   "js": 41569.219381653056,
+   "beklenen": 41569.219381653056,
+   "ok": true
+  },
+  "model surtunme mu [-]": {
+   "js": 0.45,
+   "beklenen": 0.45,
+   "ok": true
+  }
+ },
+ "kinematik": {
+  "aci_deg": {
+   "js": 9.6726855248351,
+   "beklenen": 9.672685524835103,
+   "hata": 3.672934129491475e-14
+  },
+  "ayak_radyal_mm": {
+   "js": 569.7130618233917,
+   "beklenen": 569.7130618233917,
+   "hata": 0
+  },
+  "amort_acik_mm": {
+   "js": 199.99688897580384,
+   "beklenen": 199.9968889758038,
+   "hata": 1.421107577020488e-14
+  },
+  "amort_kapali_mm": {
+   "js": 180.99638435411134,
+   "beklenen": 180.9963843541113,
+   "hata": 1.5702915575815154e-14
+  },
+  "MA_0": {
+   "js": 2.9060132961642964,
+   "beklenen": 2.9060132965936907,
+   "hata": 1.4776061018008499e-8
+  },
+  "MA_1": {
+   "js": 3.125206856414768,
+   "beklenen": 3.125206856315104,
+   "hata": 3.189031552928726e-9
+  },
+  "disa_egim": {
+   "js": -0.28649039803701726,
+   "beklenen": -0.28649039803701726,
+   "hata": 0
+  },
+  "temas_yukselme_mm": 56.99999999999997,
+  "temas_kayma_mm": -16.329952688109984
+ },
+ "itki": {
+  "bogaz capi                 [mm]": {
+   "js": 3,
+   "ktr": 3,
+   "hata": 0
+  },
+  "cikis capi                 [mm]": {
+   "js": 10,
+   "ktr": 10,
+   "hata": 0
+  },
+  "alan orani Ae/At            [-]": {
+   "js": 11.111111111111112,
+   "ktr": 11.11,
+   "hata": 0.010001000100027553
+  },
+  "cikis Mach sayisi           [-]": {
+   "js": 4.040344952171182,
+   "ktr": 4.03,
+   "hata": 0.2566985650417322
+  },
+  "cikis statik sicakligi      [K]": {
+   "js": 69.87305082977319,
+   "ktr": 70.1,
+   "hata": 0.3237505994676216
+  },
+  "cikis hizi Ve             [m/s]": {
+   "js": 688.4450229292556,
+   "ktr": 688,
+   "hata": 0.06468356529878325
+  },
+  "tek lule debisi          [kg/s]": {
+   "js": 0.48824054853951504,
+   "ktr": 0.488,
+   "hata": 0.04929273350718255
+  },
+  "tupteki azot kutlesi       [kg]": {
+   "js": 3.0526963222923706,
+   "ktr": 3.05,
+   "hata": 0.08840400958592863
+  },
+  "lule itkisi (ideal)         [N]": {
+   "js": 342.87620591469476,
+   "ktr": 344,
+   "hata": 0.32668432712361484
+  },
+  "tam itkide gaz suresi       [s]": {
+   "js": 2.084147750136669,
+   "ktr": 2.08,
+   "hata": 0.1994110642629281
+  },
+  "lule yaricapi (CAD)        [mm]": {
+   "js": 300,
+   "ktr": 300,
+   "hata": 0
+  },
+  "5 s hover sonrasi basinc [bar]": {
+   "js": 86.20815155967975,
+   "ktr": 85.8,
+   "hata": 0.47570111850786895
+  },
+  "5 s hover sonrasi sicaklik [K]": {
+   "js": 208.68015164656967,
+   "ktr": 207.7,
+   "hata": 0.4719073888154457
+  }
+ },
+ "statik": {
+  "roket agirligi              [N]": {
+   "js": 313.8128,
+   "python": 313.8128,
+   "hata": 0
+  },
+  "3 bacagin toplam tepkisi    [N]": {
+   "js": 313.81280140839306,
+   "python": 313.8128013336519,
+   "hata": 2.3817109246558677e-8
+  },
+  "duran roket: ayak yolu     [mm]": {
+   "js": 43.37093867894226,
+   "python": 43.37093867881392,
+   "hata": 2.959083497901803e-10
+  },
+  "amortisor sikismasi        [mm]": {
+   "js": 14.588474729062938,
+   "python": 14.588474729020943,
+   "hata": 2.8786321270941847e-10
+  },
+  "analitik (halka agirligi tasir)": {
+   "js": 14.588474729062938,
+   "python": 14.58847472622651,
+   "hata": 1.944293721316469e-8
+  },
+  "agirlik_hatasi_yuzde": 4.4880039152419125e-7
+ },
+ "en_buyuk_hata": 0.00434175873907908,
+ "enerji": {
+  "E0": 2068.6539776,
+  "E1": 2068.653977600144,
+  "hata": 6.9685366326104475e-12
+ },
+ "tarih": "2026-11-01",
+ "hata_sayisi": 0,
+ "gecti": true
+}

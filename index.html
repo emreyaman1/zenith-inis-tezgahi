@@ -1,0 +1,2619 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ZENITH dikey inişli roketin inişini tarayıcıda 3 boyutlu ve etkileşimli gösteren simülasyon">
+<title>ZENITH İniş Tezgâhı</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ===========================================================================
+   Yerleşim: solda 3B uçuş penceresi + telemetri şeritleri, sağda kumanda rayı.
+   Telafi paneli bir uçuş konsolu gibi: koyu, soğuk, sayılar eşit genişlikte.
+   =========================================================================== */
+:root{
+  --zemin:#e9edf1; --yuzey:#ffffff; --yuzey2:#f4f7f9; --yuzey3:#e3e9ee;
+  --cizgi:#ccd6de; --cizgi2:#b3c0ca;
+  --metin:#121b24; --metin2:#53636f; --metin3:#7d8b96;
+  --vurgu:#0a7286; --vurgu-is:#e0f4f8;
+  --iyi:#16733c; --uyari:#9a5a04; --kritik:#a81f1f;
+  --itki:#0896b0;
+  --gok:#c9d8e4; --beton:#b9b4a8; --izgara:#9aa4ad;
+  --golge:0 1px 2px rgba(18,27,36,.07), 0 4px 14px rgba(18,27,36,.05);
+  --f-bas:'Saira Condensed','Arial Narrow',Haettenschweiler,sans-serif;
+  --f-gov:'Source Sans 3',system-ui,-apple-system,sans-serif;
+  --f-say:'IBM Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --zemin:#0a1016; --yuzey:#131c25; --yuzey2:#1a242e; --yuzey3:#223040;
+    --cizgi:#2a3846; --cizgi2:#3a4c5c;
+    --metin:#e6edf3; --metin2:#93a5b4; --metin3:#6d7f8e;
+    --vurgu:#2bc4de; --vurgu-is:#10323b;
+    --iyi:#4ec97e; --uyari:#e8a33d; --kritik:#f3797c;
+    --itki:#5fdcf0;
+    --gok:#0d1620; --beton:#2e2c27; --izgara:#3c4751;
+    --golge:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --zemin:#0a1016; --yuzey:#131c25; --yuzey2:#1a242e; --yuzey3:#223040;
+  --cizgi:#2a3846; --cizgi2:#3a4c5c;
+  --metin:#e6edf3; --metin2:#93a5b4; --metin3:#6d7f8e;
+  --vurgu:#2bc4de; --vurgu-is:#10323b;
+  --iyi:#4ec97e; --uyari:#e8a33d; --kritik:#f3797c;
+  --itki:#5fdcf0;
+  --gok:#0d1620; --beton:#2e2c27; --izgara:#3c4751;
+  --golge:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+summary::-webkit-details-marker{display:none}
+html,body{height:100%}
+body{
+  margin:0; background:var(--zemin); color:var(--metin);
+  font-family:var(--f-gov); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--f-bas); font-weight:600; margin:0; text-wrap:balance;
+  letter-spacing:.01em}
+.say{font-family:var(--f-say); font-variant-numeric:tabular-nums}
+
+/* ---------------------------------------------------------------- iskelet */
+.uyg{
+  min-height:100%; display:flex; flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:14px 26px;
+  max-width:1680px; margin:0 auto;
+}
+.ust{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:12px}
+.ust h1{font-size:clamp(20px,2.4vw,27px); text-transform:uppercase;
+  letter-spacing:.055em; line-height:1}
+.ust .alt{color:var(--metin2); font-size:13.5px; min-width:0}
+.etiket-rozet{
+  font-family:var(--f-say); font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; padding:3px 7px; border-radius:4px;
+  background:var(--vurgu-is); color:var(--vurgu); border:1px solid var(--cizgi);
+  white-space:nowrap;
+}
+.govde{display:grid; grid-template-columns:minmax(0,1fr) 352px; gap:14px; align-items:start}
+.sol{display:flex; flex-direction:column; gap:12px; min-width:0}
+
+/* ----------------------------------------------------------- 3B pencere */
+.sahne{
+  position:relative; background:var(--gok); border:1px solid var(--cizgi);
+  border-radius:10px; overflow:hidden; box-shadow:var(--golge);
+  height:clamp(330px,56vh,620px);
+  /* pan-y: telefonda dikey kaydırma sayfaya kalsın, yatay sürükleme kamerayı
+     döndürsün. touch-action:none olsaydı kullanıcı sahnenin üstünde sıkışırdı. */
+  touch-action:pan-y;
+}
+.sahne canvas{display:block; width:100%; height:100%}
+.hud{
+  position:absolute; top:10px; left:10px; font-family:var(--f-say); font-size:12px;
+  background:color-mix(in srgb, var(--yuzey) 86%, transparent);
+  border:1px solid var(--cizgi); border-radius:7px; padding:8px 10px;
+  backdrop-filter:blur(7px); pointer-events:none; min-width:168px;
+}
+.hud-liste{display:grid; grid-template-columns:auto auto; gap:1px; margin:0}
+.hud dt{color:var(--metin2); font-size:10.5px; letter-spacing:.055em;
+  text-transform:uppercase; align-self:center}
+.hud dd{margin:0 0 0 12px; text-align:right; font-weight:600;
+  font-variant-numeric:tabular-nums}
+.hud-faz{
+  margin-bottom:6px; padding-bottom:6px;
+  border-bottom:1px solid var(--cizgi); font-family:var(--f-bas);
+  font-size:13px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--vurgu); font-weight:600;
+}
+.kam-dug{position:absolute; top:10px; right:10px; display:flex; gap:5px; flex-wrap:wrap;
+  justify-content:flex-end; max-width:60%}
+.kam-dug button{
+  font-family:var(--f-say); font-size:11px; padding:5px 9px; cursor:pointer;
+  background:color-mix(in srgb, var(--yuzey) 86%, transparent); color:var(--metin2);
+  border:1px solid var(--cizgi); border-radius:5px; backdrop-filter:blur(7px);
+}
+.kam-dug button[aria-pressed="true"]{background:var(--vurgu); color:#fff;
+  border-color:var(--vurgu)}
+.sahne-ipucu{
+  position:absolute; bottom:8px; right:10px; font-size:11px; color:var(--metin3);
+  font-family:var(--f-say); pointer-events:none;
+  text-shadow:0 1px 3px var(--gok);
+}
+
+/* --------------------------------------------------------------- sonuç */
+.sonuc{
+  background:var(--yuzey); border:1px solid var(--cizgi);
+  border-left:4px solid var(--cizgi2); border-radius:9px; padding:11px 15px;
+  box-shadow:var(--golge);
+  display:grid; grid-template-columns:minmax(190px,0.9fr) minmax(0,1.6fr);
+  gap:4px 22px; align-items:start;
+}
+.sonuc .bas{min-width:0}
+.sonuc dl{grid-column:2}
+@media (max-width:700px){
+  .sonuc{grid-template-columns:1fr}
+  .sonuc dl{grid-column:1}
+}
+.sonuc.iyi{border-left-color:var(--iyi)}
+.sonuc.uyari{border-left-color:var(--uyari)}
+.sonuc.kritik{border-left-color:var(--kritik)}
+.sonuc h3{font-size:16.5px; letter-spacing:.05em; text-transform:uppercase}
+.sonuc.iyi h3{color:var(--iyi)}
+.sonuc.uyari h3{color:var(--uyari)}
+.sonuc.kritik h3{color:var(--kritik)}
+.sonuc p{margin:2px 0 7px; font-size:13px; color:var(--metin2)}
+/* dt ve dd'yi ikişer ikişer sarmalıyoruz: düz bir grid'de etiket ile değer
+   bağımsız kayıp yanlış eşleşmiş gibi görünüyordu. */
+.sonuc dl{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:8px 16px; margin:0}
+.sonuc dl>div{min-width:0}
+.sonuc dt{font-size:10px; letter-spacing:.055em; text-transform:uppercase;
+  color:var(--metin3)}
+.sonuc dd{margin:0; font-family:var(--f-say); font-size:14px; font-weight:600;
+  font-variant-numeric:tabular-nums}
+
+/* ------------------------------------------------------------- oynatıcı */
+.oynatici{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  padding:9px 12px; box-shadow:var(--golge);
+}
+.oynatici input[type=range]{flex:1 1 180px; min-width:120px; accent-color:var(--vurgu)}
+.oyn-dug{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:7px; cursor:pointer;
+  background:var(--vurgu); color:#fff; border:none; font-size:14px; flex:0 0 auto;
+}
+.oyn-zaman{font-family:var(--f-say); font-size:12.5px; color:var(--metin2);
+  min-width:112px; font-variant-numeric:tabular-nums}
+.hiz-grup{display:flex; gap:0; border:1px solid var(--cizgi); border-radius:7px;
+  overflow:hidden; flex:0 0 auto}
+.hiz-grup button{font-family:var(--f-say); font-size:11.5px; padding:5px 8px;
+  background:var(--yuzey2); color:var(--metin2); border:none; cursor:pointer;
+  border-right:1px solid var(--cizgi)}
+.hiz-grup button:last-child{border-right:none}
+.hiz-grup button[aria-pressed="true"]{background:var(--vurgu); color:#fff}
+
+/* ------------------------------------------------ canlı teknik kesit (2B) */
+.teknik{background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  box-shadow:var(--golge); padding:9px 11px 7px}
+.teknik-bas{display:flex; justify-content:space-between; align-items:center;
+  gap:10px; flex-wrap:wrap; margin-bottom:4px}
+.teknik h3{font-size:11.5px; letter-spacing:.075em; text-transform:uppercase;
+  color:var(--metin2)}
+.bacak-sec{display:flex; gap:0; border:1px solid var(--cizgi); border-radius:6px;
+  overflow:hidden}
+.bacak-sec button{font-family:var(--f-say); font-size:11px; padding:4px 8px;
+  background:var(--yuzey2); color:var(--metin2); border:none; cursor:pointer;
+  border-right:1px solid var(--cizgi)}
+.bacak-sec button:last-child{border-right:none}
+.bacak-sec button[aria-pressed="true"]{background:var(--vurgu); color:#fff}
+.teknik-govde{display:flex; gap:12px; align-items:stretch}
+.teknik canvas{display:block; flex:1 1 auto; min-width:0; width:100%; height:296px}
+.teknik-degerler{flex:0 0 186px; margin:0; display:grid; align-content:start;
+  grid-template-columns:1fr auto; gap:3px 8px; font-size:11.5px}
+.teknik-degerler dt{color:var(--metin3); min-width:0}
+.teknik-degerler dd{margin:0; font-family:var(--f-say); font-weight:600;
+  text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.teknik-degerler dd.vurgulu{color:var(--vurgu)}
+@media (max-width:700px){
+  .teknik-govde{flex-direction:column}
+  .teknik-degerler{flex:1 1 auto}
+  .teknik canvas{height:250px}
+}
+
+/* -------------------------------------------------- grafik büyütme katmanı */
+.buyut{position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+  justify-content:center; padding:20px;
+  background:color-mix(in srgb, var(--zemin) 80%, transparent);
+  backdrop-filter:blur(4px)}
+.buyut-ic{background:var(--yuzey); border:1px solid var(--cizgi2);
+  border-radius:11px; box-shadow:0 12px 50px rgba(0,0,0,.35); padding:14px 16px 16px;
+  width:min(980px,100%); max-height:100%; overflow:auto}
+.buyut-bas{display:flex; justify-content:space-between; align-items:center; gap:12px}
+.buyut-bas h3{font-size:15px; letter-spacing:.05em; text-transform:uppercase}
+.buyut-bas button{background:none; border:none; cursor:pointer; font-size:26px;
+  line-height:1; color:var(--metin2); padding:0 4px}
+.buyut canvas{display:block; width:100%; height:min(52vh,420px); margin-top:8px}
+.buyut-bilgi{display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  gap:8px 16px; margin-top:12px; padding-top:12px; border-top:1px solid var(--cizgi)}
+.buyut-bilgi div{min-width:0}
+.buyut-bilgi dt{font-size:10px; letter-spacing:.055em; text-transform:uppercase;
+  color:var(--metin3)}
+.buyut-bilgi dd{margin:0; font-family:var(--f-say); font-size:14px; font-weight:600;
+  font-variant-numeric:tabular-nums}
+
+/* grafik imleç ipucu */
+.grafik{position:relative}
+.g-ipucu{
+  position:absolute; pointer-events:none; z-index:5; font-family:var(--f-say);
+  font-size:11px; line-height:1.45; background:var(--yuzey);
+  border:1px solid var(--cizgi2); border-radius:6px; padding:5px 8px;
+  box-shadow:0 3px 12px rgba(0,0,0,.18); white-space:nowrap;
+}
+.g-ipucu b{font-weight:600}
+.g-ipucu i{display:inline-block; width:7px; height:7px; border-radius:2px;
+  margin-right:5px}
+.grafik .ac-ipucu{position:absolute; top:8px; right:10px; font-size:10px;
+  color:var(--metin3); font-family:var(--f-say); pointer-events:none; opacity:0}
+.grafik:hover .ac-ipucu{opacity:1}
+
+/* ------------------------------------------------------------- grafikler */
+.grafikler{display:grid; grid-template-columns:repeat(auto-fit,minmax(246px,1fr)); gap:10px}
+.grafik{background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  padding:9px 10px 6px; box-shadow:var(--golge); min-width:0}
+.grafik h4{font-size:11.5px; letter-spacing:.075em; text-transform:uppercase;
+  color:var(--metin2); display:flex; justify-content:space-between; gap:8px;
+  align-items:baseline; margin-bottom:5px}
+.grafik h4 span{font-family:var(--f-say); font-size:11px; color:var(--metin3);
+  letter-spacing:0; text-transform:none; font-weight:400}
+.grafik canvas{display:block; width:100%; height:112px}
+.grafik.kisa canvas{height:52px}
+
+/* ------------------------------------------------------------ kumanda rayı */
+.sag{display:flex; flex-direction:column; gap:10px; min-width:0}
+.panel{background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  box-shadow:var(--golge); overflow:hidden}
+.panel>h2{
+  font-size:12.5px; letter-spacing:.085em; text-transform:uppercase;
+  padding:10px 13px; color:var(--metin2); border-bottom:1px solid var(--cizgi);
+  background:var(--yuzey2); display:flex; justify-content:space-between;
+  align-items:center; gap:8px;
+}
+.panel-ic{padding:11px 13px 14px; display:flex; flex-direction:column; gap:13px}
+
+.grup>summary{
+  list-style:none; cursor:pointer; padding:10px 13px; background:var(--yuzey2);
+  font-family:var(--f-bas); font-size:12.5px; letter-spacing:.085em;
+  text-transform:uppercase; color:var(--metin2); display:flex;
+  justify-content:space-between; align-items:center; gap:8px;
+}
+.grup>summary::after{content:"+"; font-family:var(--f-say); font-size:15px;
+  color:var(--metin3)}
+.grup[open]>summary{border-bottom:1px solid var(--cizgi)}
+.grup[open]>summary::after{content:"−"}
+
+.senaryolar{display:grid; gap:6px; padding:11px 13px 13px}
+.senaryolar button{
+  text-align:left; padding:8px 11px; border-radius:7px; cursor:pointer;
+  background:var(--yuzey2); border:1px solid var(--cizgi); color:var(--metin);
+  font-family:var(--f-gov); font-size:13.5px; line-height:1.3; display:grid;
+  grid-template-columns:auto 1fr; gap:2px 9px; align-items:center;
+}
+.senaryolar button:hover{border-color:var(--vurgu)}
+.senaryolar button[aria-pressed="true"]{background:var(--vurgu-is);
+  border-color:var(--vurgu)}
+.senaryolar .nokta{width:9px; height:9px; border-radius:50%; background:var(--cizgi2)}
+.senaryolar .iyi .nokta{background:var(--iyi)}
+.senaryolar .kritik .nokta{background:var(--kritik)}
+.senaryolar .uyari .nokta{background:var(--uyari)}
+.senaryolar small{grid-column:2; color:var(--metin3); font-size:11.5px;
+  display:block; line-height:1.35}
+
+/* kaydırıcı */
+.ayar{display:flex; flex-direction:column; gap:3px}
+.ayar>label{display:flex; justify-content:space-between; align-items:baseline;
+  gap:8px; font-size:13px; font-weight:600}
+.ayar .deger{font-family:var(--f-say); font-size:12.5px; color:var(--vurgu);
+  font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+.ayar input[type=range]{width:100%; accent-color:var(--vurgu); margin:1px 0}
+.ayar .ipucu{font-size:11.5px; color:var(--metin3); line-height:1.4}
+.ayar.degisti>label{color:var(--vurgu)}
+
+/* açma-kapama */
+.anahtar{display:flex; gap:9px; align-items:flex-start; cursor:pointer}
+.anahtar input{appearance:none; -webkit-appearance:none; margin:2px 0 0; flex:0 0 auto;
+  width:34px; height:19px; border-radius:10px; background:var(--yuzey3);
+  border:1px solid var(--cizgi2); position:relative; cursor:pointer;
+  transition:background .14s}
+.anahtar input::after{content:""; position:absolute; top:2px; left:2px; width:13px;
+  height:13px; border-radius:50%; background:var(--yuzey); transition:transform .14s;
+  box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.anahtar input:checked{background:var(--vurgu); border-color:var(--vurgu)}
+.anahtar input:checked::after{transform:translateX(15px); background:#fff}
+.anahtar input:focus-visible{outline:2px solid var(--vurgu); outline-offset:2px}
+.anahtar .yazi{font-size:13px; font-weight:600; min-width:0}
+.anahtar .yazi small{display:block; font-weight:400; color:var(--metin3);
+  font-size:11.5px; line-height:1.4}
+
+/* ikili seçim */
+.ikili{display:flex; flex-direction:column; gap:4px}
+.ikili>span{font-size:13px; font-weight:600}
+.ikili .secenekler{display:grid; grid-template-columns:1fr 1fr; gap:0;
+  border:1px solid var(--cizgi); border-radius:7px; overflow:hidden}
+.ikili button{padding:7px 6px; font-family:var(--f-gov); font-size:12.5px;
+  background:var(--yuzey2); border:none; cursor:pointer; color:var(--metin2);
+  border-right:1px solid var(--cizgi)}
+.ikili button:last-child{border-right:none}
+.ikili button[aria-pressed="true"]{background:var(--vurgu); color:#fff}
+.ikili .ipucu{font-size:11.5px; color:var(--metin3); line-height:1.4}
+
+.sifirla{
+  width:100%; padding:9px; border-radius:7px; cursor:pointer; font-family:var(--f-gov);
+  font-size:13px; font-weight:600; background:var(--yuzey2); color:var(--metin2);
+  border:1px solid var(--cizgi);
+}
+.sifirla:hover{border-color:var(--vurgu); color:var(--vurgu)}
+
+/* ------------------------------------------------------------- açıklama */
+.aciklama{display:grid; gap:10px}
+.kutu{background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  box-shadow:var(--golge); overflow:hidden}
+.kutu>summary{
+  padding:11px 14px; cursor:pointer; font-family:var(--f-bas); font-size:14px;
+  letter-spacing:.055em; text-transform:uppercase; color:var(--metin2);
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+}
+.kutu>summary::-webkit-details-marker{display:none}
+.kutu>summary::after{content:"+"; font-family:var(--f-say); color:var(--metin3);
+  font-size:16px}
+.kutu[open]>summary::after{content:"−"}
+.kutu[open]>summary{border-bottom:1px solid var(--cizgi); background:var(--yuzey2)}
+.kutu .icerik{padding:13px 16px 17px; max-width:72ch}
+.kutu .icerik p{margin:0 0 10px}
+.kutu .icerik h4{font-size:14px; margin:15px 0 5px; color:var(--vurgu)}
+.kutu .icerik h4:first-child{margin-top:0}
+.kutu .icerik ul{margin:0 0 10px; padding-left:20px}
+.kutu .icerik li{margin-bottom:5px}
+.kutu .icerik code{font-family:var(--f-say); font-size:12.5px; background:var(--yuzey2);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--cizgi)}
+.sarili{overflow-x:auto}
+table.veri{border-collapse:collapse; font-family:var(--f-say); font-size:12px;
+  width:100%; min-width:460px}
+table.veri th,table.veri td{padding:5px 9px; text-align:right; white-space:nowrap;
+  border-bottom:1px solid var(--cizgi)}
+table.veri th{color:var(--metin3); font-weight:500; font-size:10.5px;
+  letter-spacing:.055em; text-transform:uppercase; text-align:right}
+table.veri td:first-child,table.veri th:first-child{text-align:left}
+table.veri .ok{color:var(--iyi)}
+table.veri .yok{color:var(--kritik)}
+.uyari-kutu{
+  border-left:4px solid var(--uyari); background:var(--yuzey2); padding:11px 14px;
+  border-radius:0 7px 7px 0; margin:0 0 12px; font-size:13.5px;
+}
+.uyari-kutu strong{color:var(--uyari)}
+.dogr-ozet{display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  font-family:var(--f-say); font-size:13px; margin-bottom:12px}
+.dogr-ozet .buyuk{font-size:21px; font-weight:600; color:var(--iyi)}
+button.calistir{padding:8px 14px; border-radius:7px; cursor:pointer; font-size:13px;
+  font-weight:600; background:var(--vurgu); color:#fff; border:none;
+  font-family:var(--f-gov)}
+.dip{color:var(--metin3); font-size:12px; margin-top:14px; text-align:center}
+
+@media (max-width:1040px){
+  .govde{grid-template-columns:1fr}
+  .sag{order:2}
+  .sol{order:1}
+  .sahne{height:clamp(300px,48vh,460px)}
+}
+@media (max-width:620px){
+  body{font-size:14.5px}
+  .sahne-ipucu{display:none}
+  .grafikler{grid-template-columns:1fr}
+  /* HUD ile kamera düğmeleri dar ekranda çakışmasın: düğmeler alta iner */
+  .hud{min-width:0; font-size:11px; padding:6px 9px}
+  .hud dt{font-size:9.5px}
+  .kam-dug{top:auto; bottom:8px; left:10px; right:10px; max-width:none;
+    justify-content:flex-start}
+  .kam-dug button{font-size:10.5px; padding:4px 7px}
+  .ust h1{letter-spacing:.035em}
+  .oyn-zaman{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .anahtar input,.anahtar input::after{transition:none}
+}
+</style>
+
+<div class="uyg">
+  <header class="ust">
+    <h1>ZENITH İniş Tezgâhı</h1>
+    <span class="etiket-rozet" id="rozetDogr">doğrulanıyor…</span>
+    <div class="alt">ZENITH IV · 32 kg · 3 bacak · 560 mm açılım · Airtac ACA2020-2 hidrolik amortisör ·
+      soğuk gaz itkisi —
+      parametreleri değiştir, roketi indir, başarısız inişleri de gör.</div>
+  </header>
+
+  <div class="govde">
+    <div class="sol">
+      <div class="sahne" id="sahne">
+        <canvas id="tuval"></canvas>
+        <div class="hud">
+          <div class="hud-faz" id="hudFaz">hazır</div>
+          <dl class="hud-liste" id="hudListe"></dl>
+        </div>
+        <div class="kam-dug" id="kamDug"></div>
+        <div class="sahne-ipucu">sürükle: döndür · tekerlek: yakınlaş</div>
+      </div>
+
+      <div class="sonuc" id="sonucKart"></div>
+
+      <div class="teknik">
+        <div class="teknik-bas">
+          <h3>İniş takımı — canlı teknik kesit</h3>
+          <div class="bacak-sec" id="bacakSec"></div>
+        </div>
+        <div class="teknik-govde">
+          <canvas id="teknikTuval"></canvas>
+          <dl class="teknik-degerler" id="teknikDegerler"></dl>
+        </div>
+      </div>
+
+      <div class="oynatici">
+        <button class="oyn-dug" id="oynDug" aria-label="Oynat / duraklat">❚❚</button>
+        <input type="range" id="zamanKay" min="0" max="1000" value="0" step="1"
+               aria-label="Zaman">
+        <span class="oyn-zaman say" id="oynZaman">0,000 / 0,000 s</span>
+        <div class="hiz-grup" id="hizGrup"></div>
+        <button class="oyn-dug" id="tekrarDug" aria-label="Baştan oynat"
+                style="background:var(--yuzey2);color:var(--metin2);border:1px solid var(--cizgi)">↺</button>
+      </div>
+
+      <div class="grafikler" id="grafikler"></div>
+
+      <div class="aciklama">
+        <details class="kutu" open>
+          <summary>Lüleler nasıl çalışıyor? Kuvvete neye bakarak karar veriyor?</summary>
+          <div class="icerik" id="itkiAciklama"></div>
+        </details>
+        <details class="kutu">
+          <summary>Bu amortisör neden yay gibi roketi taşımıyor? Duran roket neye oturuyor?</summary>
+          <div class="icerik" id="sekmeAciklama"></div>
+        </details>
+        <details class="kutu">
+          <summary>Roketin ölçüleri nereden geldi?</summary>
+          <div class="icerik" id="cadAciklama"></div>
+        </details>
+        <details class="kutu">
+          <summary>Doğrulama — tarayıcıdaki fizik Python çözücüsüyle aynı mı?</summary>
+          <div class="icerik" id="dogrAciklama"></div>
+        </details>
+        <details class="kutu">
+          <summary>Modelin sınırları ve kabulleri</summary>
+          <div class="icerik" id="sinirAciklama"></div>
+        </details>
+      </div>
+    </div>
+
+    <aside class="sag">
+      <div class="panel">
+        <h2>Hazır senaryolar</h2>
+        <div class="senaryolar" id="senaryolar"></div>
+      </div>
+      <div id="kumandalar"></div>
+      <button class="sifirla" id="sifirlaDug">Bütün ayarları varsayılana döndür</button>
+    </aside>
+  </div>
+
+  <div class="buyut" id="buyut" hidden>
+    <div class="buyut-ic">
+      <div class="buyut-bas">
+        <h3 id="buyutBaslik"></h3>
+        <button id="buyutKapat" aria-label="Kapat">×</button>
+      </div>
+      <canvas id="buyutTuval"></canvas>
+      <div class="buyut-bilgi" id="buyutBilgi"></div>
+    </div>
+  </div>
+
+  <p class="dip">ZENITH İniş Tezgâhı · ZENITH IV · TEKNOFEST Dikey İnişli Roket
+    Yarışması · fizik <code style="font-family:var(--f-say)">hesaplar/sim.py</code>
+    modelinden taşındı</p>
+</div>
+
+<script>
+// Güvenlik ağı: 3B kütüphanesi ya da fizik modülü yüklenemezse sessiz kalmasın.
+window.__zenithYuklendi = false;
+setTimeout(function () {
+  // Calisan bir sahneyi asla silme: hem bayraga hem de tuvalin varligina bak.
+  if (window.__zenithYuklendi) return;
+  var s = document.getElementById('sahne');
+  if (s && s.querySelector('canvas')) return;
+  if (s) {
+    s.innerHTML = '<p style="padding:22px;line-height:1.6;color:#b91c1c">' +
+      'Simülasyon kodu yüklenemedi (3B kütüphanesi ya da fizik modülü). ' +
+      'Sayfayı yenilemeyi deneyin.</p>';
+  }
+}, 8000);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+import { kosu, ItkiSistemi } from './fizik.js';
+import { OLCU, KTR, AMORT, bacakAcisi, bacakNoktalari, amortisorBoyu, kinematikDenetimi,
+  luleKesiti, donustur, pabucProfili, kuvvetOrani } from './geometri.js';
+
+const $ = (s) => document.querySelector(s);
+const sayi = (v, n = 2) => v.toLocaleString('tr-TR',
+  { minimumFractionDigits: n, maximumFractionDigits: n });
+
+// =========================================================================
+//  PYTHON REFERANS DEGERLERI  (python_referans.py ciktisi)
+//  Tarayicidaki fizik bunlari tutturmak zorunda; sayfa bunu canli olcer.
+// =========================================================================
+// Nihai tasarım: Airtac ACA2020-2 kendini ayarlayan hidrolik amortisör, kartuş, MA 2,91→3,13.
+const REFERANS = {
+  dt: 1e-4, t_son: 1.2,
+  statik: { agirlik: 313.8128, tepki: 313.8128, cokme: 43.3709, x: 14.5885,
+            dt: 2e-4, t_son: 2, h0: 0.0005, v0: -0.01 },
+  testler: [
+    { ad: '0,2 m/s · düz', g: { v0: [0, 0, -0.2], egim_deg: 0.0 },
+      s: 47.7868, fa: 1203.099, n: 392.084, ft: 0.000, i: 3.7483, e: 0.0000, d: false },
+    { ad: '1,5 m/s · düz', g: { v0: [0, 0, -1.5], egim_deg: 0.0 },
+      s: 49.2481, fa: 1758.913, n: 574.020, ft: 0.000, i: 5.4875, e: 0.0000, d: false },
+    { ad: '1,5 m/s · 10° tek bacak', g: { v0: [0, 0, -1.5], egim_deg: 10.0, egim_yonu_deg: 0.0 },
+      s: 56.5687, fa: 5394.949, n: 1744.009, ft: 781.623, i: 5.5575, e: 10.0000, d: false },
+    { ad: '1,5 m/s · 10° iki bacak', g: { v0: [0, 0, -1.5], egim_deg: 10.0, egim_yonu_deg: 180.0 },
+      s: 52.3264, fa: 2800.553, n: 910.193, ft: 273.017, i: 5.8009, e: 10.0000, d: false },
+    { ad: '2,0 m/s + 0,5 m/s yanal', g: { v0: [0, 0, -2.0], egim_deg: 0.0, vx: 0.5 },
+      s: 53.8688, fa: 4192.394, n: 1358.016, ft: 500.374, i: 6.7191, e: 1.3623, d: false },
+    { ad: '3,0 m/s · düz', g: { v0: [0, 0, -3.0], egim_deg: 0.0 },
+      s: 51.3334, fa: 3580.387, n: 1231.355, ft: 0.000, i: 11.7716, e: 0.0000, d: false },
+    { ad: '3,5 m/s · 12° tek bacak (devrilir)', g: { v0: [0, 0, -3.5], egim_deg: 12.0, egim_yonu_deg: 0.0 },
+      s: 546.8714, fa: 413366.783, n: 128030.127, ft: 55582.486, i: 815.9649, e: 97.2170, d: true },
+    { ad: '2,0 m/s · düz (tasarım)', g: { v0: [0, 0, -2.0], egim_deg: 0.0 },
+      s: 50.0028, fa: 2208.648, n: 721.748, ft: 0.000, i: 6.8998, e: 0.0000, d: false },
+  ],
+};
+
+// =========================================================================
+//  KUMANDA TANIMLARI
+// =========================================================================
+const KUMANDALAR = [
+  { grup: 'Bırakma', acik: true, ogeler: [
+    { id: 'irtifa', tip: 'kay', ad: 'Bırakma yüksekliği', birim: 'm',
+      min: 5, max: 12, adim: 0.5, basamak: 1,
+      ipucu: 'Roket vinçle bu yüksekliğe kaldırılıp serbest bırakılıyor. Şartname 8–10 m.' },
+    { id: 'egim_deg', tip: 'kay', ad: 'Bırakma eğimi', birim: '°',
+      min: 0, max: 15, adim: 1, basamak: 0,
+      ipucu: 'Roket ne kadar yatık bırakılıyor. Şartnamenin ek puan senaryosu 8–12°.' },
+    { id: 'egim_yonu_deg', tip: 'ikili', ad: 'Eğimin yönü',
+      secenekler: [['Tek bacağa doğru', 0], ['İki bacağın ortasına', 180]],
+      ipucu: 'Tek bacağın üstüne inmek çok daha tehlikeli: bütün darbeyi o bacak alır ve roket devrilmeye daha yakın olur.' },
+    { id: 'serbest_dusus', tip: 'kay', ad: 'Aviyonik kaç saniye sonra devreye giriyor',
+      birim: 's', min: 0, max: 1.3, adim: 0.05, basamak: 2,
+      ipucu: 'Bu süre boyunca roket hiç itki vermeden düşer. Ne kadar beklerse o kadar hızlanır; 1 saniyeden sonra itki yetmez.' },
+    { id: 'yanal_hiz', tip: 'kay', ad: 'Başlangıç yanal hızı', birim: 'm/s',
+      min: 0, max: 2, adim: 0.1, basamak: 1,
+      ipucu: 'Bırakma anında yana doğru hız. Ayak zemine sürtünür, roket devrilmeye zorlanır.' },
+    { id: 'ruzgar', tip: 'kay', ad: 'Yanal rüzgâr', birim: 'm/s',
+      min: 0, max: 12, adim: 0.5, basamak: 1,
+      ipucu: 'Yatay rüzgâr gövdeye kuvvet uygular. Kuvvet ağırlık merkezinin üstünde etki ettiği için roketi aynı zamanda eğer. Rüzgâr sıfırdan büyükse hava sürüklemesi otomatik açılır.' },
+  ] },
+
+  { grup: 'İtki sistemi (soğuk gaz)', acik: false, ogeler: [
+    { id: 'P_tank_bar', tip: 'kay', ad: 'Tüpteki başlangıç basıncı', birim: 'bar',
+      min: 40, max: 300, adim: 10, basamak: 0,
+      ipucu: '9 litre, 300 bar = 3,21 kg hava. Tam itkide sadece 2,1 saniye yeter. Basıncı düşürmek "gazı az doldurduk" senaryosudur.' },
+    { id: 'regulator', tip: 'anahtar', ad: 'Basınç regülatörü kullan',
+      ipucu: 'Regülatör besleme basıncını sabit tutar: itki daha az ama tüp boşalırken düşmez. İtki/ağırlık 3,3 yerine 1,6 olur, bu yüzden frenleme ivmesini de düşürmek gerekir.' },
+    { id: 'P_reg_bar', tip: 'kay', ad: 'Regülatör basıncı', birim: 'bar',
+      min: 60, max: 260, adim: 10, basamak: 0, bagli: () => P.regulator,
+      ipucu: 'Regülatörün tuttuğu sabit basınç.' },
+    { id: 'valf_tipi', tip: 'ikili', ad: 'Valf tipi',
+      secenekler: [['Oransal iğne valf', 'oransal'], ['Aç-kapa selenoid', 'ackapa']],
+      ipucu: 'KTR’de step motorla sürülen oransal iğne valfe geçildi: gaz debisi kısılabiliyor. ÖTR’de aç-kapa selenoid vardı; o yalnızca tam açık ya da tam kapalı olabildiği için itki darbe genişliğiyle ayarlanıyordu. Farkı görmek için ikisini de deneyin.' },
+    { id: 't_strok_ms', tip: 'kay', ad: 'İğnenin tam yol süresi', birim: 'ms',
+      min: 30, max: 800, adim: 10, basamak: 0, bagli: () => P.valf_tipi === 'oransal',
+      ipucu: 'Step motor iğneyi kapalıdan tam açığa bu sürede götürür. Oransal valfin en büyük zaafı budur: selenoid 10 ms’de açılırken burada 150 ms gerekir, yani kontrol daha yavaş tepki verir.' },
+    { id: 'f_pwm', tip: 'kay', ad: 'Valf darbe frekansı', birim: 'Hz',
+      min: 5, max: 100, adim: 5, basamak: 0, bagli: () => P.valf_tipi === 'ackapa',
+      ipucu: 'Valf saniyede kaç kez açılıp kapanıyor. Çok yükseltirsen darbe süresi valfin açılma süresinden kısa kalır ve valf tam açılamaz.' },
+    { id: 't_acilma_ms', tip: 'kay', ad: 'Selenoidin açılma süresi', birim: 'ms',
+      min: 2, max: 40, adim: 1, basamak: 0, bagli: () => P.valf_tipi === 'ackapa',
+      ipucu: 'Selenoid valf anında açılmaz. Gerçek valflerde 10–20 ms.' },
+    { id: 'tikali0', tip: 'anahtar', ad: '1 numaralı lüle tıkalı',
+      ipucu: 'Lüle hiç itki üretmez. Kontrolcü hâlâ ondan itki ister, gelmez; roket dengesiz moment alır.' },
+    { id: 'tikali1', tip: 'anahtar', ad: '2 numaralı lüle tıkalı' },
+    { id: 'tikali2', tip: 'anahtar', ad: '3 numaralı lüle tıkalı' },
+  ] },
+
+  { grup: 'Aviyonik (kontrol)', acik: false, ogeler: [
+    { id: 'kontrol_acik', tip: 'anahtar', ad: 'Kontrol sistemi açık',
+      ipucu: 'Kapatırsan roket baştan sona serbest düşer — iniş takımının tek başına ne kadarını yutabildiğini gösterir.' },
+    { id: 'v_tavan', tip: 'kay', ad: 'En yüksek iniş hızı', birim: 'm/s',
+      min: 2, max: 12, adim: 0.5, basamak: 1,
+      ipucu: 'Aviyonik roketin bu hızdan daha hızlı inmesine izin vermez. Düşük tutmak gaz harcar, yüksek tutmak frenleme mesafesi ister.' },
+    { id: 'a_hedef', tip: 'kay', ad: 'Frenleme ivmesi', birim: 'm/s²',
+      min: 3, max: 18, adim: 0.5, basamak: 1,
+      ipucu: 'Son yavaşlamanın şiddeti. Üç lüle birlikte en fazla 22 m/s² verebilir; bunun üstünü isteyince itki doyar ve roket sert iner.' },
+    { id: 'Kp_v', tip: 'kay', ad: 'Hız düzeltme gücü', birim: '',
+      min: 0.5, max: 10, adim: 0.5, basamak: 1,
+      ipucu: 'Gerçek hız hedeften saptığında kontrolcünün ne kadar sert tepki verdiği (PID’in P kazancı). Küçükse roket hedefin gerisinde kalıp sert iner.' },
+    { id: 'egim_kazanc', tip: 'kay', ad: 'Eğim düzeltme gücü', birim: '',
+      min: 0, max: 3, adim: 0.1, basamak: 1,
+      ipucu: 'Üç lüle arasındaki itki farkıyla eğimi düzeltme gücü. 0 yaparsan eğim hiç düzeltilmez: roket yatık iner.' },
+    { id: 'f_orn', tip: 'kay', ad: 'Aviyonik ölçüm frekansı', birim: 'Hz',
+      min: 5, max: 200, adim: 5, basamak: 0,
+      ipucu: 'Saniyede kaç kez ölçüm alıp karar veriyor. KTR’nin 6 serbestlik dereceli benzetimi 100 Hz kullanıyor. Düşürürsen kontrol gecikir.' },
+    { id: 'gurultu', tip: 'kay', ad: 'Sensör gürültüsü', birim: '×',
+      min: 0, max: 4, adim: 0.5, basamak: 1,
+      ipucu: '1 = yükseklikte ±2 cm, hızda ±5 cm/s saçılma. Gürültü arttıkça kontrolcü yanlış ölçüme tepki verir.' },
+    { id: 'sapma_h', tip: 'kay', ad: 'Yükseklik sensörü sabit hatası', birim: 'm',
+      min: -0.8, max: 0.8, adim: 0.1, basamak: 1,
+      ipucu: 'Sensör kendini olduğundan yukarıda (+) ya da aşağıda (−) sanıyor. Artı değer frenlemeyi geciktirir: en sinsi arıza budur.' },
+    { id: 'yanal_duzelt', tip: 'anahtar', ad: 'Yanal hızı eğilerek düzelt',
+      ipucu: 'Üç lüle de aşağı baktığı için roket yanal hızını ancak eğilip itkiyi yana çevirerek durdurabilir. Açarsan roket bilerek eğilir, sonra dikleşir.' },
+    { id: 'temasta_kes', tip: 'anahtar', ad: 'Zemine değince itkiyi kes',
+      ipucu: 'Gerçek aviyonikler temas anında valfleri kapatır. Kapalı bırakırsan roket zeminde itilmeye devam eder.' },
+  ] },
+
+  { grup: 'Roket ve zemin', acik: false, ogeler: [
+    { id: 'kutle', tip: 'kay', ad: 'Roket kütlesi', birim: 'kg',
+      min: 20, max: 32, adim: 0.5, basamak: 1,
+      ipucu: 'İniş takımı 32 kg (şartnamenin üst sınırı) ile tasarlandı. Atalet momenti kütleyle birlikte ölçekleniyor.' },
+    { id: 'mu', tip: 'kay', ad: 'Zemin sürtünme katsayısı', birim: '',
+      min: 0.1, max: 0.8, adim: 0.05, basamak: 2,
+      ipucu: '0,45 = kuru beton (tasarımda kullanılan üst sınır). 0,20 = yağlı/parlak beton: ayak kayar, devrilme riski değişir. KTR Delrin pabuçlar için statik 0,2 veriyor.' },
+  ] },
+];
+
+const SENARYOLAR = [
+  { ad: 'Başarılı yumuşak iniş', renk: 'iyi',
+    not: 'Her şey yolunda: 9 m, dik, 0,4 s serbest düşüş.', p: {} },
+  { ad: 'Eğik bırakma — 12°, tek bacak', renk: 'iyi',
+    not: 'Şartnamenin ek puan senaryosu. Aviyonik eğimi düzeltiyor.',
+    p: { egim_deg: 12, egim_yonu_deg: 0 } },
+  { ad: 'Aviyonik geç devreye girdi', renk: 'kritik',
+    not: '1,15 s serbest düşüş. İtki artık yetişmiyor.', p: { serbest_dusus: 1.15 } },
+  { ad: 'Gaz yetersiz — tüp 90 bar', renk: 'kritik',
+    not: 'İtki/ağırlık 1’e yakın; roket frenleyemiyor.', p: { P_tank_bar: 90 } },
+  { ad: '1 numaralı lüle tıkalı', renk: 'kritik',
+    not: 'Dengesiz moment: roket devriliyor.', p: { tikali0: true } },
+  { ad: 'Kontrol tamamen kapalı', renk: 'kritik',
+    not: 'Baştan sona serbest düşüş: iniş takımı tek başına ne yapabilir?',
+    p: { kontrol_acik: false } },
+  { ad: 'Sensör 0,5 m yukarıda sanıyor', renk: 'uyari',
+    not: 'Frenleme geç başlıyor.', p: { sapma_h: 0.5 } },
+  { ad: 'Fırtına — 12 m/s rüzgâr, 8° eğim', renk: 'uyari',
+    not: 'Üç lüle de aşağı baktığı için yanal hız durdurulamıyor: roket yana kayarak iniyor.',
+    p: { ruzgar: 12, egim_deg: 8 } },
+  { ad: 'Regülatörlü sistem — 150 bar', renk: 'kritik',
+    not: 'İtki/ağırlık 3,2’den 1,6’ya düşüyor; 8 m/s² frenleme artık mümkün değil.',
+    p: { regulator: true } },
+  { ad: 'ÖTR’deki aç-kapa selenoid valf', renk: 'uyari',
+    not: 'KTR’de oransal iğne valfe geçilmişti. Eski tasarımla iniş sertleşiyor.',
+    p: { valf_tipi: 'ackapa' } },
+];
+
+// =========================================================================
+//  PARAMETRE DURUMU
+// =========================================================================
+const BASLANGIC = {
+  irtifa: 9, egim_deg: 0, egim_yonu_deg: 0, serbest_dusus: 0.40,
+  yanal_hiz: 0, ruzgar: 0,
+  P_tank_bar: 300, regulator: false, P_reg_bar: 150,
+  valf_tipi: 'oransal', t_strok_ms: 150, f_pwm: 20, t_acilma_ms: 12,
+  tikali0: false, tikali1: false, tikali2: false,
+  kontrol_acik: true, v_tavan: 6, a_hedef: 8, Kp_v: 7, egim_kazanc: 1,
+  f_orn: 100, gurultu: 0, sapma_h: 0, yanal_duzelt: false, temasta_kes: true,
+  kutle: 32, mu: 0.45,
+};
+let P = Object.assign({}, BASLANGIC);
+
+function fizikParam() {
+  return {
+    irtifa: P.irtifa, egim_deg: P.egim_deg, egim_yonu_deg: P.egim_yonu_deg,
+    serbest_dusus: P.serbest_dusus, yanal_hiz: P.yanal_hiz, ruzgar: P.ruzgar,
+    P_tank_bar: P.P_tank_bar, regulator: P.regulator, P_reg_bar: P.P_reg_bar,
+    valf_tipi: P.valf_tipi, t_strok_ms: P.t_strok_ms,
+    f_pwm: P.f_pwm, t_acilma_ms: P.t_acilma_ms,
+    tikali: [P.tikali0, P.tikali1, P.tikali2],
+    kontrol_acik: P.kontrol_acik, v_tavan: P.v_tavan, a_hedef: P.a_hedef,
+    Kp_v: P.Kp_v, egim_kazanc: P.egim_kazanc, f_orn: P.f_orn,
+    gurultu: P.gurultu, sapma_h: P.sapma_h, yanal_duzelt: P.yanal_duzelt,
+    temasta_kes: P.temasta_kes, kutle: P.kutle, mu: P.mu,
+  };
+}
+
+// =========================================================================
+//  3B SAHNE
+// =========================================================================
+const T = window.THREE;
+const tuval = $('#tuval');
+const sahneKutu = $('#sahne');
+let renderer, sahne, kamera, roket, zeminMesh, izgara, isikAna, isikGok;
+const bacaklar = [], alevler = [], temasHalkalari = [];
+let izCizgi, izKonum, dikeyRef, golgeLeke;
+
+const KAMERALAR = {
+  genel: { r: 4.6, th: -1.05, ph: 1.16, takip: true, hedef: 0.9 },
+  yan: { r: 3.0, th: 0.0, ph: 1.50, takip: true, hedef: 0.55 },
+  ayak: { r: 1.95, th: -0.62, ph: 1.33, takip: false, hedef: 0.08, odak: 'ayak' },
+  ust: { r: 3.4, th: -1.05, ph: 0.42, takip: false, hedef: 0.3 },
+};
+let kam = Object.assign({}, KAMERALAR.genel);
+let kamAd = 'genel';
+let hedefZYum = 0.9, hedefXYum = 0, hedefYYum = 0;
+// Zamanda atlayınca (kaydırıcı, baştan al, yeni çözüm) kamera yumuşak takip
+// yerine doğrudan hedefe otursun; yoksa yarım saniye roketi arıyor.
+let kamAtla = true;
+
+function tema() {
+  const kok = document.documentElement;
+  const acik = kok.dataset.theme === 'light' ||
+    (!kok.dataset.theme && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+  return acik ? 'acik' : 'koyu';
+}
+function renkOku(ad) {
+  return getComputedStyle(document.documentElement).getPropertyValue(ad).trim();
+}
+
+function malzemeler() {
+  const k = tema() === 'koyu';
+  return {
+    // karbon boru: tankla ayni siyahlikta olmasin diye biraz daha parlak
+    karbon: new T.MeshStandardMaterial({ color: k ? 0x2b333c : 0x323a43,
+      roughness: 0.32, metalness: 0.45 }),
+    alu: new T.MeshStandardMaterial({ color: k ? 0x8e9aa6 : 0xaab4bd,
+      roughness: 0.38, metalness: 0.75 }),
+    alu2: new T.MeshStandardMaterial({ color: k ? 0x707d8a : 0x93a0ab,
+      roughness: 0.45, metalness: 0.6 }),
+    celik: new T.MeshStandardMaterial({ color: 0x5d666f, roughness: 0.3,
+      metalness: 0.9 }),
+    pom: new T.MeshStandardMaterial({ color: k ? 0xd6d2c6 : 0xeeebe2,
+      roughness: 0.8, metalness: 0.02 }),
+    // basinc tupu KOMPOZIT: KTR render'inda siyah, parlak
+    tank: new T.MeshStandardMaterial({ color: k ? 0x14181d : 0x1d2228,
+      roughness: 0.3, metalness: 0.2 }),
+    silikon: new T.MeshStandardMaterial({ color: 0xb8402f, roughness: 0.85,
+      metalness: 0.0 }),
+    hortum: new T.MeshStandardMaterial({ color: k ? 0xc9d2d9 : 0xe8edf1,
+      roughness: 0.55, metalness: 0.05 }),
+    // amortisör kartuşu: kovan ve itici eloksallı alüminyum (koyu gri)
+    kartus: new T.MeshStandardMaterial({ color: 0x59626b, roughness: 0.35,
+      metalness: 0.6 }),
+    lule: new T.MeshStandardMaterial({ color: 0x3f464d, roughness: 0.3,
+      metalness: 0.85 }),
+    govdeUst: new T.MeshStandardMaterial({ color: k ? 0xdfe6ec : 0xf0f4f7,
+      roughness: 0.5, metalness: 0.1 }),
+    vurgu: new T.MeshStandardMaterial({ color: 0x0a7286, roughness: 0.5,
+      metalness: 0.3 }),
+  };
+}
+let M = null;
+
+const mm = (v) => v / 1000;
+const zc = (zmm) => mm(zmm - OLCU.CG_Z);     // CAD yüksekliği -> CG'ye göre
+const CG_YER = mm(OLCU.CG_Z - OLCU.AYAK_TEMAS_Z);   // CG'nin ayak tabanına uzaklığı [m]
+
+function silindir(r1, r2, h, mal, seg = 20) {
+  const g = new T.CylinderGeometry(r1, r2, h, seg);
+  g.rotateX(Math.PI / 2);                     // Y ekseni -> Z ekseni (Z yukarı)
+  const m = new T.Mesh(g, mal);
+  m.castShadow = true;
+  return m;
+}
+
+function bacakKur(i, az) {
+  const kok = new T.Group();
+  kok.rotation.z = az;
+  // D mafsalı: dönme ekseni tegetsel (yerel y)
+  const pivot = new T.Group();
+  pivot.position.set(mm(OLCU.D_U), 0, zc(OLCU.D_Z));
+  kok.add(pivot);
+
+  // --- yan plakalar (P01): D-F, D-C, C-F kolları + D, C, F gözleri ---
+  const uF = mm(OLCU.F_U - OLCU.D_U), wF = mm(OLCU.F_Z - OLCU.D_Z);
+  const uC = mm(OLCU.C_U - OLCU.D_U), wC = mm(OLCU.C_Z - OLCU.D_Z);
+  const plT = mm(OLCU.PLAKA_T);
+  const kollar = [[[0, 0], [uF, wF], OLCU.KOL_GEN_DF], [[0, 0], [uC, wC], OLCU.KOL_GEN_DC],
+                  [[uC, wC], [uF, wF], OLCU.KOL_GEN_CF]];
+  const gozler = [[0, 0, OLCU.GOZ_R_D], [uC, wC, OLCU.GOZ_R_CF], [uF, wF, OLCU.GOZ_R_CF]];
+  for (const s of [1, -1]) {
+    const yp = s * mm(OLCU.D_Y);
+    for (const [a, b, gen] of kollar) {
+      const kolM = new T.Mesh(
+        new T.BoxGeometry(Math.hypot(b[0] - a[0], b[1] - a[1]), plT, mm(gen)), M.alu);
+      kolM.position.set((a[0] + b[0]) / 2, yp, (a[1] + b[1]) / 2);
+      kolM.rotation.y = -Math.atan2(b[1] - a[1], b[0] - a[0]);
+      kolM.castShadow = true;
+      pivot.add(kolM);
+    }
+    for (const [u, w, r] of gozler) {
+      const gozM = new T.Mesh(new T.CylinderGeometry(mm(r), mm(r), plT, 24), M.alu);
+      gozM.position.set(u, yp, w);
+      gozM.castShadow = true;
+      pivot.add(gozM);
+    }
+  }
+
+  // --- enine bağlantı boruları (C ve F köşelerini birbirine bağlar) ---
+  for (const [u, w] of [[uC, wC], [uF, wF]]) {
+    const b = new T.Mesh(
+      new T.CylinderGeometry(mm(OLCU.ENINE_OD) / 2, mm(OLCU.ENINE_OD) / 2, 0.082, 16),
+      M.alu2);
+    b.position.set(u, 0, w);
+    b.castShadow = true;
+    pivot.add(b);
+  }
+  // --- D pimi ---
+  const pim = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.1, 14), M.celik);
+  pivot.add(pim);
+
+  // --- ayak: sap (P03) + pabuç (P04). Pabuç bacağa SABİT, bacakla birlikte
+  //     döner; tabanı R200 kubbe olduğu için zeminde yuvarlanır ---
+  const sapL = mm(OLCU.AYAK_PIM_OFS - OLCU.PAD_T);      // F'den pabucun üst yüzüne
+  const sap = new T.Mesh(new T.BoxGeometry(mm(OLCU.SAP_U), mm(OLCU.SAP_Y), sapL), M.alu2);
+  sap.position.set(uF, 0, wF - sapL / 2);
+  sap.castShadow = true;
+  pivot.add(sap);
+  const pabucG = new T.LatheGeometry(
+    pabucProfili(14).map(([r, h]) => new T.Vector2(mm(r), mm(h))), 40);
+  pabucG.rotateX(Math.PI / 2);                // dönel eksen Y -> Z (yukarı)
+  const pabuc = new T.Mesh(pabucG, M.pom);
+  pabuc.position.set(uF, 0, wF - mm(OLCU.AYAK_PIM_OFS));   // taban ortası
+  pabuc.castShadow = true;
+  pivot.add(pabuc);
+
+  // --- amortisör kartuşu: kovan (P11) A'da gövdeye, itici (P12) C'de bacağa bağlı;
+  //     içinde Airtac ACA2020-2 (görünmez). Her karede yeniden yönlendirilir.
+  //     Yerel +Y ekseni A'dan C'ye. Ölçüler geometri.js içindeki AMORT ---
+  const amort = new T.Group();
+  amort.position.set(mm(OLCU.A_U), 0, zc(OLCU.A_Z));
+  kok.add(amort);
+  const eksende = (r0, r1, y0, y1, mal, seg = 24) => {
+    const m = new T.Mesh(new T.CylinderGeometry(mm(r1), mm(r0), mm(y1 - y0), seg), mal);
+    m.position.y = mm((y0 + y1) / 2); m.castShadow = true; amort.add(m);
+    return m;
+  };
+  const goz = (r, mal) => {            // kartuş gözü: ekseni teğetsel (yerel X)
+    const g = new T.CylinderGeometry(mm(r), mm(r), mm(AMORT.GOZ_GEN), 18);
+    g.rotateZ(Math.PI / 2);
+    const m = new T.Mesh(g, mal); m.castShadow = true; amort.add(m);
+    return m;
+  };
+  goz(AMORT.GOZ_R_A, M.kartus);                                // kovan gözü (A)
+  eksende(AMORT.KOVAN_ARKA_R, AMORT.KOVAN_ARKA_R, 12, AMORT.KOVAN_DIS_SON, M.kartus);  // dişli arka bölüm
+  eksende(AMORT.KOVAN_ON_R, AMORT.KOVAN_ON_R, AMORT.KOVAN_DIS_SON, AMORT.KOVAN_ON_SON,
+    M.kartus);                                                 // ön bölüm (itici kafası içinde)
+  // C ile birlikte hareket edenler: itici mili ve itici gözü
+  const mil = new T.Mesh(new T.CylinderGeometry(mm(AMORT.ITICI_MIL_R), mm(AMORT.ITICI_MIL_R),
+    1, 14), M.celik);
+  mil.castShadow = true; amort.add(mil);
+  const altGoz = goz(AMORT.GOZ_R_C, M.alu2);
+  // --- üst braket (kartuşu karbon boruya bağlayan kelepçe) ---
+  const kel = new T.Mesh(new T.BoxGeometry(0.052, 0.088, 0.03), M.alu);
+  kel.position.set(mm(OLCU.A_U) - 0.016, 0, zc(OLCU.A_Z));
+  kel.castShadow = true; kok.add(kel);
+  const kol = silindir(0.012, 0.012, mm(OLCU.A_U - OLCU.BORU_R) - 0.01, M.alu, 12);
+  kol.rotation.y = Math.PI / 2;
+  kol.position.set((mm(OLCU.A_U) + mm(OLCU.BORU_R)) / 2, 0, zc(OLCU.A_Z));
+  kok.add(kol);
+  // --- alt braket (D pimini taşıyan parça) ---
+  const altB = new T.Mesh(new T.BoxGeometry(0.075, 0.1, 0.034), M.alu);
+  altB.position.set(mm(OLCU.D_U) - 0.028, 0, zc(OLCU.D_Z) + 0.004);
+  altB.castShadow = true; kok.add(altB);
+
+  // --- zemin teması halkası (ayak değdiğinde görünür) ---
+  const hg = new T.RingGeometry(0.055, 0.075, 36);
+  const hm = new T.MeshBasicMaterial({ color: 0x0a7286, transparent: true,
+    opacity: 0, side: T.DoubleSide, depthWrite: false });
+  const halka = new T.Mesh(hg, hm);
+  halka.position.z = 0.004;
+  halka.visible = false;
+  sahne.add(halka);
+  temasHalkalari.push({ mesh: halka, mal: hm });
+
+  bacaklar.push({ kok, pivot, pabuc, amort, mil, altGoz, az, i });
+  return kok;
+}
+
+function alevKur(az) {
+  const g = new T.Group();
+  g.position.set(mm(KTR.LULE_R), 0, zc(KTR.LULE_Z[0]));   // lüle çıkışı
+  g.rotation.z = 0;
+  const kapsul = new T.Group();
+  kapsul.rotation.x = -Math.PI / 2;        // yerel +Y -> aşağı
+  g.add(kapsul);
+  const yap = (rUst, rAlt, renk, op) => {
+    const m = new T.Mesh(
+      new T.CylinderGeometry(rUst, rAlt, 1, 18, 1, true),
+      new T.MeshBasicMaterial({ color: renk, transparent: true, opacity: op,
+        blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
+    kapsul.add(m);
+    return m;
+  };
+  const dis = yap(0.052, 0.008, 0xbfe9f5, 0.0);
+  const ic = yap(0.024, 0.004, 0xffffff, 0.0);
+  const parla = new T.Mesh(new T.SphereGeometry(0.022, 12, 10),
+    new T.MeshBasicMaterial({ color: 0xd8f4fb, transparent: true, opacity: 0,
+      blending: T.AdditiveBlending, depthWrite: false }));
+  g.add(parla);
+  const grup = new T.Group();
+  grup.rotation.z = az;
+  grup.add(g);
+  alevler.push({ grup, dis, ic, parla, az });
+  return grup;
+}
+
+function roketKur() {
+  const g = new T.Group();
+
+  // --- 3 karbon boru (gövde kafesi) ---
+  for (let i = 0; i < 3; i++) {
+    const a = i * 2 * Math.PI / 3;
+    const b = silindir(mm(KTR.BORU_OD) / 2, mm(KTR.BORU_OD) / 2,
+      mm(KTR.BORU_Z[1] - KTR.BORU_Z[0]), M.karbon, 18);
+    b.position.set(mm(KTR.BORU_R) * Math.cos(a), mm(KTR.BORU_R) * Math.sin(a),
+      zc((KTR.BORU_Z[0] + KTR.BORU_Z[1]) / 2));
+    g.add(b);
+  }
+  const K = KTR;
+  const ortaZ = (a) => zc((a[0] + a[1]) / 2);
+  const boyu = (a) => mm(a[1] - a[0]);
+
+  // --- alt blok (6061 Al, CNC) ---
+  const blok = silindir(mm(K.ALT_BLOK_R), mm(K.ALT_BLOK_R), boyu(K.ALT_BLOK_Z),
+    M.alu, 36);
+  blok.position.z = ortaZ(K.ALT_BLOK_Z); g.add(blok);
+
+  // --- aviyonik kutusu (gövdenin en altında, alt bloğun üstünde) ---
+  const avi = new T.Mesh(new T.BoxGeometry(mm(K.AVIYONIK_GEN[0]),
+    mm(K.AVIYONIK_GEN[1]), boyu(K.AVIYONIK_Z)), M.govdeUst);
+  avi.position.z = ortaZ(K.AVIYONIK_Z);
+  avi.castShadow = true; g.add(avi);
+
+  // --- TF02 Pro lazer irtifa ölçer: aşağı bakar, kontrolcünün gözü budur ---
+  const lidar = new T.Mesh(new T.BoxGeometry(mm(K.LIDAR_GEN[0]),
+    mm(K.LIDAR_GEN[1]), boyu(K.LIDAR_Z)), M.lule);
+  lidar.position.z = ortaZ(K.LIDAR_Z);
+  lidar.castShadow = true; g.add(lidar);
+  const lens = silindir(0.012, 0.012, 0.004, M.vurgu, 14);
+  lens.position.set(0.016, 0, zc(K.LIDAR_Z[0]) - 0.002); g.add(lens);
+
+  // --- basınç tüpü: kompozit, Ø175 x 570 mm, 9 litre ---
+  const tr = mm(K.TANK_R), tL = boyu(K.TANK_Z);
+  const kubbe = tr * 0.70;
+  const tankG = silindir(tr, tr, tL - 2 * kubbe, M.tank, 34);
+  tankG.position.z = ortaZ(K.TANK_Z); g.add(tankG);
+  for (const s of [1, -1]) {
+    const kap = new T.Mesh(new T.SphereGeometry(tr, 28, 18), M.tank);
+    kap.scale.z = kubbe / tr;
+    kap.position.z = ortaZ(K.TANK_Z) + s * (tL / 2 - kubbe);
+    kap.castShadow = true; g.add(kap);
+  }
+
+  // --- hizalama yüzükleri (Al) + silikon tamponlar: tüpü kafese merkezler ---
+  for (const [yz, sz] of [[K.ALT_YUZUK_Z, K.SILIKON_ALT_Z],
+                          [K.UST_YUZUK_Z, K.SILIKON_UST_Z]]) {
+    const ri = tr, ro = mm(K.ALT_YUZUK_R);
+    const hg = new T.TorusGeometry((ri + ro) / 2, (ro - ri) / 2, 6, 40);
+    const h = new T.Mesh(hg, M.alu);
+    h.scale.z = boyu(yz) / (ro - ri);
+    h.position.z = ortaZ(yz); h.castShadow = true; g.add(h);
+    const sg = new T.TorusGeometry(tr + 0.0025, 0.0025, 6, 34);
+    const sh = new T.Mesh(sg, M.silikon);
+    sh.position.z = ortaZ(sz); g.add(sh);
+  }
+
+  // --- manifold: doğrudan tüp çıkışında, eksen üzerinde (Al 7075) ---
+  const man = new T.Mesh(new T.BoxGeometry(mm(K.MANIFOLD_GEN), mm(K.MANIFOLD_GEN),
+    boyu(K.MANIFOLD_Z)), M.alu2);
+  man.position.z = ortaZ(K.MANIFOLD_Z); man.castShadow = true; g.add(man);
+  // tüp çıkışı ile manifold arası kısa nipel
+  const nipel = silindir(0.014, 0.014, 0.02, M.celik, 12);
+  nipel.position.z = zc(742); g.add(nipel);
+  // --- selenoid (tahliye) valfi ---
+  const sol = new T.Mesh(new T.BoxGeometry(0.037, 0.064, boyu(K.SOLENOID_Z)), M.lule);
+  sol.position.set(mm(K.SOLENOID_R), 0, ortaZ(K.SOLENOID_Z));
+  sol.rotation.z = Math.PI / 6; sol.castShadow = true; g.add(sol);
+
+  // --- ÜST PLAKA (Top_Block): 3 kollu Y plaka, uçları r = 291 mm ---
+  const upz = ortaZ(K.UST_PLAKA_Z), upt = boyu(K.UST_PLAKA_Z);
+  const gobek = silindir(0.085, 0.085, upt, M.alu, 30);
+  gobek.position.z = upz; g.add(gobek);
+
+  // --- İTKİ GRUBU: her kolda step motor + iğne valf + lüle ---
+  // Luleler bacaklara gore 60 derece kaymistir (CAD: bacak 345, lule 45).
+  const kes = luleKesiti();
+  for (let i = 0; i < 3; i++) {
+    const a = Math.PI / 3 + i * 2 * Math.PI / 3;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    // plaka kolu
+    const r0 = 0.06, r1 = mm(K.UST_PLAKA_YARI);
+    const kol = new T.Mesh(new T.BoxGeometry(r1 - r0, 0.088, upt), M.alu);
+    kol.position.set((r0 + r1) / 2 * ca, (r0 + r1) / 2 * sa, upz);
+    kol.rotation.z = a; kol.castShadow = true; g.add(kol);
+    // step motor (ESS24) - radyal yatik
+    const mot = new T.Mesh(new T.BoxGeometry(mm(K.MOTOR_GEN[0]), mm(K.MOTOR_GEN[1]),
+      boyu(K.MOTOR_Z)), M.celik);
+    mot.position.set(mm(K.MOTOR_R) * ca, mm(K.MOTOR_R) * sa, ortaZ(K.MOTOR_Z));
+    mot.rotation.z = a; mot.castShadow = true; g.add(mot);
+    // iğne valf gövdesi
+    const valf = new T.Mesh(new T.BoxGeometry(mm(K.VALF_GEN), mm(K.VALF_GEN),
+      boyu(K.VALF_Z)), M.alu2);
+    valf.position.set(mm(K.VALF_R) * ca, mm(K.VALF_R) * sa, ortaZ(K.VALF_Z));
+    valf.rotation.z = a; valf.castShadow = true; g.add(valf);
+    // --- LÜLE: gerçek De Laval konturu (Ø14 giriş -> Ø3 boğaz -> Ø10 çıkış) ---
+    const z0 = K.LULE_Z[1], z1 = K.LULE_Z[0];
+    const noktalar = [
+      new T.Vector2(0.0115, zc(z0) + 0.0),
+      new T.Vector2(0.0115, zc(z0) - 0.004),
+      new T.Vector2(mm(kes.rg) + 0.002, zc(z0) - 0.005),
+      new T.Vector2(mm(kes.rb) + 0.0015, zc(z0) - mm(kes.Lyak) - 0.005),
+      new T.Vector2(mm(kes.rc) + 0.0015, zc(z1)),
+      new T.Vector2(mm(kes.rc), zc(z1)),
+      new T.Vector2(mm(kes.rb), zc(z0) - mm(kes.Lyak) - 0.005),
+      new T.Vector2(mm(kes.rg), zc(z0) - 0.005),
+    ];
+    const lg = new T.LatheGeometry(noktalar, 24);
+    lg.rotateX(Math.PI / 2);
+    const lule = new T.Mesh(lg, M.lule);
+    lule.position.set(mm(K.LULE_R) * ca, mm(K.LULE_R) * sa, 0);
+    lule.castShadow = true; lule.material.side = T.DoubleSide; g.add(lule);
+    // --- esnek yüksek basınç hattı: manifolddan valfe ---
+    const egri = new T.CatmullRomCurve3([
+      new T.Vector3(0.032 * ca, 0.032 * sa, zc(K.MANIFOLD_Z[1]) - 0.01),
+      new T.Vector3(0.075 * ca, 0.075 * sa, zc(1010)),
+      new T.Vector3(0.17 * ca, 0.17 * sa, zc(K.HORTUM_Z[1])),
+      new T.Vector3(0.262 * ca, 0.262 * sa, zc(1030)),
+      new T.Vector3(mm(K.VALF_R) * ca, mm(K.VALF_R) * sa, zc(K.VALF_Z[1]) - 0.004),
+    ]);
+    const hortum = new T.Mesh(new T.TubeGeometry(egri, 26, 0.006, 8, false),
+      M.hortum);
+    hortum.castShadow = true; g.add(hortum);
+  }
+
+  // --- vinç bağlantı gözü (U-bolt): roket buradan asılıyor ---
+  const ug = new T.TorusGeometry(mm(K.UBOLT_GEN) / 2, 0.006, 8, 20, Math.PI);
+  const uu = new T.Mesh(ug, M.celik);
+  uu.position.z = zc(K.UBOLT_Z[1]) - mm(K.UBOLT_GEN) / 2;
+  uu.rotation.x = Math.PI / 2; uu.rotation.y = Math.PI;
+  uu.castShadow = true; g.add(uu);
+  for (const s of [1, -1]) {
+    const bacakU = silindir(0.006, 0.006, 0.08, M.celik, 10);
+    bacakU.position.set(s * mm(K.UBOLT_GEN) / 2, 0, zc(K.UBOLT_Z[0]) + 0.04);
+    g.add(bacakU);
+  }
+
+  // --- 3 bacak ---
+  for (let i = 0; i < 3; i++) g.add(bacakKur(i, i * 2 * Math.PI / 3));
+  // --- 3 alev (lülelerle aynı azimutta: bacaklara göre 60 derece kaymış) ---
+  for (let i = 0; i < 3; i++) g.add(alevKur(Math.PI / 3 + i * 2 * Math.PI / 3));
+
+  return g;
+}
+
+function sahneKur() {
+  renderer = new T.WebGLRenderer({ canvas: tuval, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  if (T.sRGBEncoding) renderer.outputEncoding = T.sRGBEncoding;
+
+  sahne = new T.Scene();
+  kamera = new T.PerspectiveCamera(42, 1, 0.05, 160);
+  kamera.up.set(0, 0, 1);
+
+  isikGok = new T.HemisphereLight(0xffffff, 0x9a8f7c, 0.62);
+  sahne.add(isikGok);
+  isikAna = new T.DirectionalLight(0xffffff, 1.05);
+  isikAna.position.set(3.4, -5.0, 7.5);
+  isikAna.castShadow = true;
+  isikAna.shadow.mapSize.set(2048, 2048);
+  const sc = isikAna.shadow.camera;
+  sc.left = -2.2; sc.right = 2.2; sc.top = 2.2; sc.bottom = -2.2;
+  sc.near = 0.5; sc.far = 22;
+  sahne.add(isikAna);
+  const dolgu = new T.DirectionalLight(0xdfe9f2, 0.3);
+  dolgu.position.set(-5, 3.5, 2.2); sahne.add(dolgu);
+
+  // --- zemin ---
+  zeminMesh = new T.Mesh(new T.CircleGeometry(16, 56),
+    new T.MeshStandardMaterial({ color: 0xb9b4a8, roughness: 0.95, metalness: 0 }));
+  zeminMesh.receiveShadow = true;
+  sahne.add(zeminMesh);
+  izgara = new T.GridHelper(16, 32, 0x9aa4ad, 0x9aa4ad);
+  izgara.rotation.x = Math.PI / 2;
+  izgara.position.z = 0.002;
+  izgara.material.opacity = 0.34; izgara.material.transparent = true;
+  sahne.add(izgara);
+
+  // --- 1200 mm gabari karesi (yarışma sınırı) ---
+  const yarim = 0.6;
+  const gp = [[-yarim, -yarim], [yarim, -yarim], [yarim, yarim], [-yarim, yarim],
+              [-yarim, -yarim]];
+  const gg = new T.BufferGeometry().setFromPoints(
+    gp.map(([x, y]) => new T.Vector3(x, y, 0.004)));
+  sahne.add(new T.Line(gg, new T.LineBasicMaterial({ color: 0xa81f1f,
+    transparent: true, opacity: 0.55 })));
+
+  // --- iniş hedefi (ayakların oturacağı daire) ---
+  const hg = new T.RingGeometry(0.553, 0.567, 72);
+  const hm = new T.MeshBasicMaterial({ color: 0x0a7286, transparent: true,
+    opacity: 0.4, side: T.DoubleSide, depthWrite: false });
+  const hedefH = new T.Mesh(hg, hm); hedefH.position.z = 0.003; sahne.add(hedefH);
+
+  // --- dikey referans (eğimi gözle görmek için) ---
+  const dg = new T.BufferGeometry().setFromPoints(
+    [new T.Vector3(0, 0, 0), new T.Vector3(0, 0, 2.6)]);
+  dikeyRef = new T.Line(dg, new T.LineBasicMaterial({ color: 0x8d99a4,
+    transparent: true, opacity: 0.3 }));
+  sahne.add(dikeyRef);
+
+  // --- yörünge izi ---
+  izKonum = new Float32Array(3 * 4000);
+  const ig = new T.BufferGeometry();
+  ig.setAttribute('position', new T.BufferAttribute(izKonum, 3));
+  ig.setDrawRange(0, 0);
+  izCizgi = new T.Line(ig, new T.LineBasicMaterial({ color: 0x0a7286,
+    transparent: true, opacity: 0.7 }));
+  sahne.add(izCizgi);
+
+  // --- yumuşak gölge lekesi (irtifa arttıkça büyüyüp soluyor) ---
+  golgeLeke = new T.Mesh(new T.CircleGeometry(0.62, 40),
+    new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16,
+      depthWrite: false }));
+  golgeLeke.position.z = 0.0015; sahne.add(golgeLeke);
+
+  M = malzemeler();
+  roket = roketKur();
+  sahne.add(roket);
+
+  temaUygula();
+  boyutla();
+}
+
+function temaUygula() {
+  const koyu = tema() === 'koyu';
+  const gok = new T.Color(koyu ? 0x0d1620 : 0xc9d8e4);
+  sahne.background = gok;
+  sahne.fog = new T.Fog(gok.getHex(), 9, 34);
+  zeminMesh.material.color.set(koyu ? 0x2e2c27 : 0xb9b4a8);
+  izgara.material.color.set(koyu ? 0x3c4751 : 0x8c959e);
+  isikGok.intensity = koyu ? 0.4 : 0.62;
+  isikAna.intensity = koyu ? 0.85 : 1.05;
+  if (M) {
+    M.karbon.color.set(koyu ? 0x2b333c : 0x323a43);
+    M.alu.color.set(koyu ? 0x8e9aa6 : 0xaab4bd);
+    M.alu2.color.set(koyu ? 0x707d8a : 0x93a0ab);
+    M.pom.color.set(koyu ? 0xd6d2c6 : 0xeeebe2);
+    M.tank.color.set(koyu ? 0x14181d : 0x1d2228);   // kompozit tüp: siyah
+    M.hortum.color.set(koyu ? 0xc9d2d9 : 0xe8edf1);
+    M.govdeUst.color.set(koyu ? 0xdfe6ec : 0xf0f4f7);
+  }
+}
+
+function boyutla() {
+  const w = sahneKutu.clientWidth, h = sahneKutu.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  kamera.aspect = w / h;
+  kamera.updateProjectionMatrix();
+}
+
+// ------------------------------------------------------------ kamera sürüş
+let surukle = null;
+sahneKutu.addEventListener('pointerdown', (e) => {
+  // Kamera düğmeleri sahnenin içinde duruyor; onlara basınca kamera dönmesin
+  if (e.target.closest && e.target.closest('button')) return;
+  surukle = { x: e.clientX, y: e.clientY, th: kam.th, ph: kam.ph };
+  sahneKutu.setPointerCapture(e.pointerId);
+});
+sahneKutu.addEventListener('pointermove', (e) => {
+  if (!surukle) return;
+  kam.th = surukle.th - (e.clientX - surukle.x) * 0.006;
+  kam.ph = Math.max(0.12, Math.min(1.54, surukle.ph - (e.clientY - surukle.y) * 0.005));
+});
+sahneKutu.addEventListener('pointerup', () => { surukle = null; });
+sahneKutu.addEventListener('pointercancel', () => { surukle = null; });
+sahneKutu.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  kam.r = Math.max(0.6, Math.min(16, kam.r * (1 + Math.sign(e.deltaY) * 0.1)));
+}, { passive: false });
+
+// =========================================================================
+//  ÇÖZÜM VE OYNATMA
+// =========================================================================
+let S = null;                      // kosu() sonucu
+let tSim = 0, oynuyor = true, hiz = 0.3;
+let temasAnlari = [-1, -1, -1];
+let hesapMs = 0;
+
+function kos() {
+  const par = fizikParam();
+  const t0 = performance.now();
+  S = kosu(par);
+  // Çözümün hangi parametrelerle koşulduğunu sakla: kaydırıcılar değişip de
+  // yeniden hesap henüz bitmemişken HUD ve grafikler eskiyi göstermeli.
+  S.par = par;
+  hesapMs = performance.now() - t0;
+  const K = S.kayit;
+
+  // her bacağın ilk temas anı (halka animasyonu için)
+  temasAnlari = [-1, -1, -1];
+  for (let f = 0; f < K.t.length; f++)
+    for (let i = 0; i < 3; i++)
+      if (temasAnlari[i] < 0 && K.s[f][i] > 1e-6) temasAnlari[i] = K.t[f];
+
+  // yörünge izi
+  const n = Math.min(K.r.length, 4000);
+  const atla = Math.max(1, Math.floor(K.r.length / 4000));
+  let j = 0;
+  for (let f = 0; f < K.r.length && j < 4000; f += atla, j++) {
+    izKonum[3 * j] = K.r[f][0]; izKonum[3 * j + 1] = K.r[f][1];
+    izKonum[3 * j + 2] = K.r[f][2];
+  }
+  izCizgi.geometry.attributes.position.needsUpdate = true;
+  izAdet = j; izAtla = atla;
+  void n;
+
+  tSim = 0; oynuyor = true; kamAtla = true;
+  $('#oynDug').textContent = '❚❚';
+  sonucCiz(); grafikleriYenile(0); zamanKayGuncelle();
+}
+let izAdet = 0, izAtla = 1;
+
+function kareBul(t) {
+  const K = S.kayit, N = K.t.length;
+  if (N === 0) return null;
+  let i = Math.min(N - 1, Math.max(0, Math.round(t / (K.t[N - 1] / (N - 1) || 1))));
+  while (i > 0 && K.t[i] > t) i--;
+  while (i < N - 1 && K.t[i + 1] <= t) i++;
+  const j = Math.min(N - 1, i + 1);
+  const dt = K.t[j] - K.t[i];
+  const u = dt > 1e-12 ? Math.max(0, Math.min(1, (t - K.t[i]) / dt)) : 0;
+  const L = (a, b) => a + (b - a) * u;
+  const q0 = K.q[i], q1 = K.q[j];
+  const nokta = q0[0] * q1[0] + q0[1] * q1[1] + q0[2] * q1[2] + q0[3] * q1[3];
+  const s = nokta < 0 ? -1 : 1;
+  const q = [L(q0[0], s * q1[0]), L(q0[1], s * q1[1]),
+             L(q0[2], s * q1[2]), L(q0[3], s * q1[3])];
+  const qn = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+  return {
+    t, i,
+    r: [L(K.r[i][0], K.r[j][0]), L(K.r[i][1], K.r[j][1]), L(K.r[i][2], K.r[j][2])],
+    q: [q[0] / qn, q[1] / qn, q[2] / qn, q[3] / qn],
+    s: [L(K.s[i][0], K.s[j][0]), L(K.s[i][1], K.s[j][1]), L(K.s[i][2], K.s[j][2])],
+    F: [L(K.F[i][0], K.F[j][0]), L(K.F[i][1], K.F[j][1]), L(K.F[i][2], K.F[j][2])],
+    valf: K.valf[i],
+    P_tank: L(K.P_tank[i], K.P_tank[j]), m_gaz: L(K.m_gaz[i], K.m_gaz[j]),
+    egim: L(K.egim[i], K.egim[j]), vz: L(K.vz[i], K.vz[j]),
+    h: L(K.h[i], K.h[j]), v_hedef: K.v_hedef[i],
+    Fa: K.Fa[i],
+  };
+}
+
+// Kartuş yönlendirmesinde her karede yeniden kullanılan geçici nesneler.
+// Yerel eksenler: X teğetsel, Y kartuş ekseni (A'dan C'ye), Z eksene dik.
+const eksenX = T && new T.Vector3(0, -1, 0), eksenY = T && new T.Vector3();
+const eksenZ = T && new T.Vector3(), eksenMat = T && new T.Matrix4();
+
+function roketiYerlestir(k) {
+  roket.position.set(k.r[0], k.r[1], k.r[2]);
+  roket.quaternion.set(k.q[1], k.q[2], k.q[3], k.q[0]);   // (x,y,z,w)
+
+  for (const b of bacaklar) {
+    // Fizik, kuvvet uygulama noktasını 1,6 x 57 mm'de kırpıyor; görsel de aynı
+    // yerde kırpılır. Pabuç bacağa sabit: ayrıca döndürülmez.
+    const s_mm = Math.max(0, Math.min(1.6 * OLCU.DUSEY_STROK, k.s[b.i] * 1000));
+    const th = bacakAcisi(s_mm);
+    b.pivot.rotation.y = -th;
+
+    // kartuş: A sabit, C bacakla birlikte döner; itici kovanın içine girer
+    const n = bacakNoktalari(th);
+    const dx = mm(n.C[0] - OLCU.A_U), dz = mm(n.C[1] - OLCU.A_Z);
+    const L = Math.hypot(dx, dz);
+    eksenY.set(dx / L, 0, dz / L);
+    eksenZ.set(-eksenY.z, 0, eksenY.x);      // eksene dik
+    eksenMat.makeBasis(eksenX, eksenY, eksenZ);
+    b.amort.quaternion.setFromRotationMatrix(eksenMat);
+    // itici mili kovanın ön ucundan C gözüne uzanır (kovanın içindeki kısmı görünmez)
+    const gY = mm(AMORT.KOVAN_ON_SON);
+    const milL = Math.max(0.002, L - mm(AMORT.GOZ_R_C) - gY);
+    b.mil.scale.y = milL; b.mil.position.y = gY + milL / 2;
+    b.altGoz.position.y = L;
+  }
+
+  // alevler
+  const F_ref = (S.itki && S.itki.F_tasarim) || 340;
+  for (let i = 0; i < 3; i++) {
+    const a = alevler[i];
+    const o = Math.max(0, Math.min(1, k.F[i] / F_ref));
+    const titre = 1 + 0.09 * Math.sin(k.t * 170 + i * 2.1) + 0.05 * Math.sin(k.t * 61);
+    const uz = (0.17 + 0.62 * o) * titre;
+    a.dis.scale.y = uz; a.dis.position.y = uz / 2;
+    a.ic.scale.y = uz * 0.52; a.ic.position.y = uz * 0.26;
+    a.dis.material.opacity = 0.42 * o;
+    a.ic.material.opacity = 0.6 * o;
+    a.parla.material.opacity = 0.5 * o;
+    a.parla.scale.setScalar(0.7 + 0.5 * o);
+    a.grup.visible = o > 0.004;
+  }
+
+  // temas halkaları
+  for (let i = 0; i < 3; i++) {
+    const t0 = temasAnlari[i], hal = temasHalkalari[i];
+    if (t0 < 0 || k.t < t0) { hal.mesh.visible = false; continue; }
+    const dt = k.t - t0;
+    if (dt > 0.75) { hal.mesh.visible = false; continue; }
+    const K = S.kayit;
+    const f = Math.min(K.t.length - 1, k.i);
+    const az = bacaklar[i].az + 0;
+    // ayak dünya konumu: gövde dönüşü uygulanmış
+    const p = new T.Vector3(mm(OLCU.F_U) * Math.cos(az), mm(OLCU.F_U) * Math.sin(az),
+      zc(OLCU.AYAK_TEMAS_Z));
+    p.applyQuaternion(roket.quaternion).add(roket.position);
+    hal.mesh.position.set(p.x, p.y, 0.004);
+    hal.mesh.visible = true;
+    hal.mesh.scale.setScalar(0.35 + 2.4 * dt);
+    hal.mal.opacity = 0.6 * Math.max(0, 1 - dt / 0.75);
+    void f;
+  }
+
+  // gölge lekesi ve dikey referans
+  const yuk = Math.max(0, k.r[2] - CG_YER);
+  golgeLeke.position.set(k.r[0], k.r[1], 0.0015);
+  golgeLeke.scale.setScalar(1 + yuk * 0.17);
+  golgeLeke.material.opacity = 0.17 / (1 + yuk * 0.5);
+  dikeyRef.position.set(k.r[0], k.r[1], 0);
+  dikeyRef.visible = k.egim > 1.2;
+
+  izCizgi.geometry.setDrawRange(0, Math.max(2, Math.min(izAdet,
+    Math.floor(k.i / izAtla) + 1)));
+}
+
+function kamerayiYerlestir(k) {
+  // Ayak irtifasi: kamera roketi takip eder, yukseldikce biraz geri cekilir ki
+  // hem roket hem de altindaki zemin cercevede kalsin.
+  const hAyak = Math.max(0, k.r[2] - CG_YER);
+  const hedef = new T.Vector3(0, 0, kam.hedef);
+  let mesafe = kam.r;
+  const yumusat = (hz, k) => {
+    hedefZYum = kamAtla ? hz : hedefZYum + (hz - hedefZYum) * k;
+    return hedefZYum;
+  };
+  // Roket yanal kayarsa (devrilme, rüzgâr) kamera onu yatayda da takip etsin;
+  // yoksa takla atan roket kadrajdan çıkıyor.
+  const yx = (k.r[0]), yy = (k.r[1]);
+  hedefXYum = kamAtla ? yx : hedefXYum + (yx - hedefXYum) * 0.12;
+  hedefYYum = kamAtla ? yy : hedefYYum + (yy - hedefYYum) * 0.12;
+  if (kam.odak === 'ayak') {
+    const p = new T.Vector3(mm(OLCU.F_U), 0, zc(OLCU.AYAK_TEMAS_Z) + 0.14);
+    p.applyQuaternion(roket.quaternion).add(roket.position);
+    hedef.set(p.x, p.y, yumusat(Math.max(0.12, p.z), 0.16));
+  } else if (kam.takip) {
+    hedef.set(hedefXYum, hedefYYum, yumusat(Math.max(kam.hedef, hAyak + 0.55), 0.14));
+    mesafe = kam.r * (1 + 0.055 * hAyak);
+  } else {
+    hedef.set(hedefXYum, hedefYYum,
+      yumusat(Math.max(kam.hedef, hAyak * 0.5 + 0.4), 0.12));
+    mesafe = kam.r * (1 + 0.09 * hAyak);
+  }
+  kamAtla = false;
+  const sp = Math.sin(kam.ph), cp = Math.cos(kam.ph);
+  kamera.position.set(
+    hedef.x + mesafe * sp * Math.cos(kam.th),
+    hedef.y + mesafe * sp * Math.sin(kam.th),
+    hedef.z + mesafe * cp);
+  kamera.lookAt(hedef);
+  isikAna.position.set(hedef.x + 3.4, hedef.y - 5.0, hedef.z + 7.5);
+  isikAna.target.position.copy(hedef);
+  isikAna.target.updateMatrixWorld();
+}
+
+// =========================================================================
+//  HUD
+// =========================================================================
+const HUD_SATIR = [
+  ['irtifa', 'İrtifa', (k) => sayi(k.h, 2) + ' m'],
+  ['hiz', 'Düşey hız', (k) => sayi(k.vz, 2) + ' m/s'],
+  ['egim', 'Eğim', (k) => sayi(k.egim, 1) + '°'],
+  ['itki', 'İtki', (k) => Math.round(k.F[0] + k.F[1] + k.F[2]) + ' N'],
+  ['tank', 'Tüp', (k) => Math.round(k.P_tank) + ' bar'],
+  ['gaz', 'Kalan gaz', (k) => sayi(k.m_gaz, 2) + ' kg'],
+  ['strok', 'Bacak stroku', (k) => Math.round(Math.max(...k.s) * 1000) + ' mm'],
+];
+let hudDd = {};
+function hudKur() {
+  const h = $('#hudListe');
+  for (const [id, ad] of HUD_SATIR) {
+    const dt = document.createElement('dt'); dt.textContent = ad;
+    const dd = document.createElement('dd'); dd.className = 'say'; dd.textContent = '—';
+    h.append(dt, dd); hudDd[id] = dd;
+  }
+}
+function hudGuncelle(k) {
+  for (const [id, , fn] of HUD_SATIR) hudDd[id].textContent = fn(k);
+  const o = S.ozet, par = S.par;
+  let faz;
+  if (!par.kontrol_acik) faz = 'kontrol kapalı — serbest düşüş';
+  else if (k.t < par.serbest_dusus) faz = 'serbest düşüş · aviyonik kapalı';
+  else if (Math.max(k.s[0], k.s[1], k.s[2]) > 1e-6) faz = 'zemin teması';
+  else if (k.m_gaz <= 1e-4) faz = 'GAZ BİTTİ';
+  else if (k.h <= 0.12) faz = 'son yaklaşma';
+  else if (Math.abs(k.v_hedef) >= par.v_tavan - 0.02) faz = 'sabit hızla iniş';
+  else faz = 'frenleme';
+  if (o.devrildi && o.t_devrildi >= 0 && k.t >= o.t_devrildi) faz = 'DEVRİLDİ';
+  $('#hudFaz').textContent = faz;
+}
+
+// =========================================================================
+//  SONUÇ KARTI
+// =========================================================================
+function sonucCiz() {
+  const o = S.ozet, s = o.sonuc;
+  const kart = $('#sonucKart');
+  kart.className = 'sonuc ' + (s.renk === 'notr' ? '' : s.renk);
+  // Roket zemine temas etmeden havada devrildiyse bacak yükü hiç oluşmamıştır.
+  const havada = o.devrildi && o.egim_temas_deg > 55;
+  const yok = havada ? '—' : null;
+  const govdeCarpti = o.ilk_carpan === 'govde';
+  const alanlar = [
+    [govdeCarpti ? 'Gövde çarpma hızı' : 'Temas hızı',
+      o.temas_var ? sayi(o.v_temas_ms, 2) + ' m/s' : '—'],
+    ['Temas eğimi', o.temas_var ? sayi(o.egim_temas_deg, 1) + '°' : '—'],
+    ['En büyük eğim', sayi(o.egim_max_deg, 1) + '°'],
+    ['Bacak stroku', yok || (Math.round(o.strok_ayakta_mm) + ' / ' + OLCU.DUSEY_STROK + ' mm')],
+    ['Ayak kuvveti', yok || (Math.round(o.N_ayakta_N) + ' N')],
+    ['En büyük ivme', yok || (sayi(o.ivme_ayakta_g, 1) + ' g')],
+    ['Kalan gaz', sayi(o.gaz_kalan_kg, 2) + ' kg'],
+  ];
+  let not = s.not;
+  if (govdeCarpti) {
+    not += ' Roket havada devrildi ve yere ayaklarıyla değil GÖVDESİYLE çarptı;' +
+      ' bacaklarda hiç yük oluşmadı. Bu noktadan sonraki sayılar çok hassastır.';
+  } else if (havada) {
+    not += ' Roket zemine değmeden havada devrildi, bu yüzden bacaklarda hiç yük' +
+      ' oluşmadı.';
+  } else if (o.devrildi) {
+    not += ' Kuvvetler yalnızca roket ayaktayken ölçülen değerlerdir;' +
+      ' devrildikten sonrakiler gövdenin zemine çarpmasından gelir.';
+  }
+  if (o.gaz_bitti) not += ' Tüpteki gaz tükendi.';
+  else if (o.doygun_sure > 0.25) {
+    not += ' Kontrolcü ' + sayi(o.doygun_sure, 1) +
+      ' saniye boyunca tam itki istedi ama daha fazlası yoktu (itki doydu).';
+  }
+  kart.innerHTML =
+    `<div class="bas"><h3>${s.ad}</h3><p>${not}</p></div><dl>` +
+    alanlar.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('') + '</dl>';
+}
+
+// =========================================================================
+//  GRAFİKLER
+// =========================================================================
+const GRAFIKLER = [
+  { id: 'irtifa', ad: 'İrtifa', birim: 'm', kisa: false,
+    seriler: [{ al: (K, f) => K.h[f], renk: '--vurgu', dolgu: true }],
+    cizgiler: [{ v: 0, et: 'zemin' }] },
+  { id: 'hiz', ad: 'Düşey hız', birim: 'm/s', kisa: false,
+    seriler: [
+      { al: (K, f) => K.v_hedef[f], renk: '--metin3', kesikli: true, ad: 'hedef' },
+      { al: (K, f) => K.vz[f], renk: '--vurgu', ad: 'gerçek' }],
+    cizgiler: [{ v: -0.2, et: 'şartname −0,2' }, { v: -1.5, et: 'limit −1,5' }] },
+  { id: 'egim', ad: 'Eğim', birim: '°', kisa: false,
+    seriler: [{ al: (K, f) => K.egim[f], renk: '--uyari', dolgu: true }],
+    cizgiler: [{ v: 25, et: 'statik devrilme 25°' },
+               { v: 55, et: 'devrik', olcekDisi: true }] },
+  { id: 'itki', ad: 'Lüle itkileri', birim: 'N', kisa: false,
+    seriler: [
+      { al: (K, f) => K.F[f][0] + K.F[f][1] + K.F[f][2], renk: '--itki', dolgu: true,
+        ad: 'toplam' },
+      { al: (K, f) => K.F[f][0], renk: '--metin2', ince: true, ad: 'lüle 1' },
+      { al: (K, f) => K.F[f][1], renk: '--metin3', ince: true, ad: 'lüle 2' },
+      { al: (K, f) => K.F[f][2], renk: '--cizgi2', ince: true, ad: 'lüle 3' }],
+    cizgiler: [{ v: () => S.par.kutle * 9.80665,
+                 et: () => 'ağırlık ' + Math.round(S.par.kutle * 9.80665) + ' N' }] },
+  { id: 'tank', ad: 'Tüp basıncı', birim: 'bar', kisa: false,
+    seriler: [{ al: (K, f) => K.P_tank[f], renk: '--vurgu', dolgu: true }],
+    cizgiler: [], enAz: 25 },
+  { id: 'strok', ad: 'Bacak stroku', birim: 'mm', kisa: false,
+    seriler: [
+      { al: (K, f) => K.s[f][0] * 1000, renk: '--vurgu', ad: 'bacak 1' },
+      { al: (K, f) => K.s[f][1] * 1000, renk: '--iyi', ad: 'bacak 2' },
+      { al: (K, f) => K.s[f][2] * 1000, renk: '--uyari', ad: 'bacak 3' }],
+    cizgiler: [{ v: OLCU.DUSEY_STROK, et: `metal durak ${OLCU.DUSEY_STROK} mm`,
+                 olcekDisi: true }], enAz: 9 },
+  { id: 'valf', ad: '1 numaralı valfin açıklığı', birim: '0–1', kisa: true,
+    seriler: [{ al: (K, f) => K.valf[f][0], renk: '--itki', dolgu: true }],
+    cizgiler: [], taban: 0, tavan: 1.05 },
+];
+const grafikler = {};
+
+function grafikleriKur() {
+  const kap = $('#grafikler');
+  for (const g of GRAFIKLER) {
+    const d = document.createElement('div');
+    d.className = 'grafik' + (g.kisa ? ' kisa' : '');
+    d.innerHTML = `<h4>${g.ad}<span>${g.birim}</span></h4>`;
+    const c = document.createElement('canvas');
+    d.appendChild(c); kap.appendChild(d);
+    grafikler[g.id] = { tanim: g, canvas: c, kutu: d, hoverT: null };
+    grafikEtkilesim(grafikler[g.id]);
+  }
+  buyukG.canvas = $('#buyutTuval');
+  buyukG.kutu = $('#buyut');
+  $('#buyutKapat').addEventListener('click', grafikBuyutKapat);
+  $('#buyut').addEventListener('click', (e) => {
+    if (e.target === $('#buyut')) grafikBuyutKapat();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('#buyut').hidden) grafikBuyutKapat();
+  });
+}
+
+/**
+ * Grafigin DEGISMEYEN kismini (eksen, izgara, egriler) bir ara tuvale cizer.
+ * Her karede yeniden cizmek 7 grafik x ~900 nokta x 60 kare demekti; artik
+ * kare basina sadece bu hazir resim kopyalanip uzerine zaman imleci konuyor.
+ */
+function grafikArkaplanCiz(G) {
+  const { tanim, canvas } = G;
+  const K = S.kayit, N = K.t.length;
+  if (!N) return;
+  const dpr = Math.min(devicePixelRatio, 2);
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  const pw_px = Math.round(w * dpr), ph_px = Math.round(h * dpr);
+  if (canvas.width !== pw_px || canvas.height !== ph_px) {
+    canvas.width = pw_px; canvas.height = ph_px;
+  }
+  if (!G.arka) G.arka = document.createElement('canvas');
+  if (G.arka.width !== pw_px || G.arka.height !== ph_px) {
+    G.arka.width = pw_px; G.arka.height = ph_px;
+  }
+  const x = G.arka.getContext('2d');
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.clearRect(0, 0, w, h);
+
+  const R = (n) => renkOku(n) || '#888';
+  const ML = 36, MR = 6, MT = 6, MB = 14;
+  const pw = w - ML - MR, ph = h - MT - MB;
+  const t1 = K.t[N - 1] || 1;
+
+  // ölçek
+  let y0 = tanim.taban !== undefined ? tanim.taban : Infinity;
+  let y1 = tanim.tavan !== undefined ? tanim.tavan : -Infinity;
+  if (!isFinite(y0) || !isFinite(y1)) {
+    for (const s of tanim.seriler)
+      for (let f = 0; f < N; f++) {
+        const v = s.al(K, f);
+        if (!isFinite(v)) continue;
+        if (tanim.taban === undefined) y0 = Math.min(y0, v);
+        if (tanim.tavan === undefined) y1 = Math.max(y1, v);
+      }
+    for (const c of tanim.cizgiler) {
+      if (c.olcekDisi) continue;              // bu çizgi ölçeği zorlamasın
+      const cv = typeof c.v === 'function' ? c.v() : c.v;
+      if (tanim.taban === undefined) y0 = Math.min(y0, cv);
+      if (tanim.tavan === undefined) y1 = Math.max(y1, cv);
+    }
+  }
+  if (!isFinite(y0)) y0 = 0;
+  if (!isFinite(y1)) y1 = 1;
+  if (y1 - y0 < 1e-9) y1 = y0 + 1;
+  // çok yassı kalan eğriler için en az bir aralık (örn. 2 mm'lik strok)
+  if (tanim.enAz && y1 - y0 < tanim.enAz) y1 = y0 + tanim.enAz;
+  const pay = (y1 - y0) * 0.1;
+  y0 -= pay; y1 += pay;
+  const px = (t) => ML + pw * (t / t1);
+  const py = (v) => MT + ph * (1 - (v - y0) / (y1 - y0));
+
+  // eksen
+  x.strokeStyle = R('--cizgi'); x.lineWidth = 1;
+  x.beginPath(); x.moveTo(ML, MT); x.lineTo(ML, MT + ph); x.lineTo(ML + pw, MT + ph);
+  x.stroke();
+  x.font = '10px ' + getComputedStyle(document.body).getPropertyValue('--f-say');
+  x.fillStyle = R('--metin3'); x.textAlign = 'right'; x.textBaseline = 'middle';
+  for (const v of [y0 + pay, y1 - pay, (y0 + y1) / 2]) {
+    const yy = py(v);
+    if (yy < MT - 1 || yy > MT + ph + 1) continue;
+    x.fillText(sayi(v, Math.abs(v) >= 100 ? 0 : (Math.abs(v) < 10 ? 1 : 0)), ML - 4, yy);
+    x.strokeStyle = R('--cizgi'); x.globalAlpha = 0.45;
+    x.beginPath(); x.moveTo(ML, yy); x.lineTo(ML + pw, yy); x.stroke();
+    x.globalAlpha = 1;
+  }
+  // referans çizgileri
+  for (const c of tanim.cizgiler) {
+    const cv = typeof c.v === 'function' ? c.v() : c.v;
+    const yy = py(cv);
+    if (yy < MT || yy > MT + ph) continue;
+    x.strokeStyle = R('--kritik'); x.globalAlpha = 0.4; x.setLineDash([3, 3]);
+    x.beginPath(); x.moveTo(ML, yy); x.lineTo(ML + pw, yy); x.stroke();
+    x.setLineDash([]); x.globalAlpha = 0.75;
+    x.textAlign = 'left'; x.fillStyle = R('--metin3');
+    x.fillText(typeof c.et === 'function' ? c.et() : c.et, ML + 4, yy - 6);
+    x.globalAlpha = 1;
+  }
+  // serbest düşüş bölgesi — çözümün KENDİ parametresiyle (kaydırıcıların o
+  // anki değeriyle değil; aradaki fark grafiği gerçekle uyumsuz gösterirdi)
+  const par = S.par;
+  if (par.kontrol_acik && par.serbest_dusus > 0.01) {
+    x.fillStyle = R('--metin3'); x.globalAlpha = 0.09;
+    x.fillRect(ML, MT, Math.max(0, Math.min(pw, px(par.serbest_dusus) - ML)), ph);
+    x.globalAlpha = 1;
+  }
+
+  // seriler  (tanımsız/NaN noktalarda çizgi kopar — örn. aviyonik kapalıyken
+  // "hedef hız" diye bir değer yoktur)
+  for (const s of tanim.seriler) {
+    const renk = R(s.renk);
+    if (s.dolgu) {
+      const taban = py(Math.max(y0, Math.min(y1, 0)));
+      x.beginPath();
+      let acik = false;
+      for (let f = 0; f < N; f++) {
+        const v = s.al(K, f);
+        if (!isFinite(v)) continue;
+        if (!acik) { x.moveTo(px(K.t[f]), taban); acik = true; }
+        x.lineTo(px(K.t[f]), py(v));
+      }
+      if (acik) {
+        x.lineTo(px(K.t[N - 1]), taban);
+        x.closePath();
+        x.fillStyle = renk; x.globalAlpha = 0.14; x.fill(); x.globalAlpha = 1;
+      }
+    }
+    x.beginPath();
+    let kalem = false;
+    for (let f = 0; f < N; f++) {
+      const v = s.al(K, f);
+      if (!isFinite(v)) { kalem = false; continue; }
+      const yy = py(v);
+      if (!kalem) { x.moveTo(px(K.t[f]), yy); kalem = true; } else x.lineTo(px(K.t[f]), yy);
+    }
+    x.strokeStyle = renk; x.lineWidth = s.ince ? 1 : (s.kesikli ? 1.2 : 1.8);
+    if (s.kesikli) x.setLineDash([4, 3]);
+    x.stroke(); x.setLineDash([]);
+  }
+  // zaman etiketi
+  x.fillStyle = R('--metin3'); x.textAlign = 'right'; x.textBaseline = 'bottom';
+  x.fillText(sayi(t1, 1) + ' s', ML + pw, h - 2);
+  x.textAlign = 'left';
+  x.fillText('0', ML + 2, h - 2);
+
+  G.olcek = { ML, pw, MT, ph, t1, dpr };
+}
+
+/** Hazır arka planı kopyalar ve üzerine zaman imlecini çizer. */
+function grafikImlecCiz(G, imlecT) {
+  const { canvas, arka, olcek } = G;
+  if (!arka || !olcek || !canvas.width) return;
+  const x = canvas.getContext('2d');
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.clearRect(0, 0, canvas.width, canvas.height);
+  x.drawImage(arka, 0, 0);
+  if (imlecT === undefined) return;
+  const { ML, pw, MT, ph, t1, dpr } = olcek;
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const xx = ML + pw * (Math.max(0, Math.min(imlecT, t1)) / t1);
+  x.strokeStyle = renkOku('--metin') || '#888';
+  x.globalAlpha = 0.5; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(xx, MT); x.lineTo(xx, MT + ph); x.stroke();
+  x.globalAlpha = 1;
+  // fareyle gezilen an ayrı bir çizgiyle gösterilir
+  if (G.hoverT != null) {
+    const hx = ML + pw * (Math.max(0, Math.min(G.hoverT, t1)) / t1);
+    x.strokeStyle = renkOku('--vurgu') || '#0a7286';
+    x.lineWidth = 1.4; x.setLineDash([3, 3]);
+    x.beginPath(); x.moveTo(hx, MT); x.lineTo(hx, MT + ph); x.stroke();
+    x.setLineDash([]);
+  }
+}
+
+/** Arka planları yeniden çizer (yeni çözüm, yeniden boyutlanma, tema değişimi). */
+function grafikleriYenile(imlecT) {
+  for (const id in grafikler) {
+    grafikArkaplanCiz(grafikler[id]);
+    grafikImlecCiz(grafikler[id], imlecT);
+  }
+}
+
+/** Sadece imleci günceller — her karede çağrılan ucuz yol. */
+function grafikleriCiz(imlecT) {
+  for (const id in grafikler) grafikImlecCiz(grafikler[id], imlecT);
+  if (!$('#buyut').hidden && buyukG.tanim) grafikImlecCiz(buyukG, imlecT);
+}
+
+// ---------------------------------------------------- grafikle etkileşim
+/** t anına en yakın kare dizini. */
+function kareIndeks(t) {
+  const K = S.kayit, N = K.t.length;
+  let i = 0, j = N - 1;
+  while (i < j) { const o = (i + j) >> 1; if (K.t[o] < t) i = o + 1; else j = o; }
+  if (i > 0 && Math.abs(K.t[i - 1] - t) < Math.abs(K.t[i] - t)) i--;
+  return Math.max(0, Math.min(N - 1, i));
+}
+
+function ipucuIcerik(tanim, t) {
+  const K = S.kayit, f = kareIndeks(t);
+  const bas = `<b>t = ${sayi(K.t[f], 3)} s</b>`;
+  const satir = tanim.seriler.map((s) => {
+    const v = s.al(K, f);
+    const renk = renkOku(s.renk) || '#888';
+    const ad = s.ad || tanim.ad;
+    return `<i style="background:${renk}"></i>${ad}: <b>` +
+      (isFinite(v) ? sayi(v, Math.abs(v) < 10 ? 2 : 0) : '—') + `</b> ${tanim.birim}`;
+  });
+  return [bas].concat(satir).join('<br>');
+}
+
+function grafikEtkilesim(G) {
+  const c = G.canvas, kutu = G.kutu;
+  const ipucu = document.createElement('div');
+  ipucu.className = 'g-ipucu'; ipucu.hidden = true;
+  kutu.appendChild(ipucu);
+  const ac = document.createElement('div');
+  ac.className = 'ac-ipucu'; ac.textContent = 'büyütmek için tıkla';
+  kutu.appendChild(ac);
+  c.style.cursor = 'pointer';
+  c.addEventListener('pointermove', (e) => {
+    const o = G.olcek;
+    if (!o) return;
+    const r = c.getBoundingClientRect();
+    const xx = e.clientX - r.left;
+    const u = (xx - o.ML) / o.pw;
+    if (u < -0.03 || u > 1.03) { ipucu.hidden = true; G.hoverT = null; return; }
+    G.hoverT = Math.max(0, Math.min(o.t1, u * o.t1));
+    ipucu.hidden = false;
+    ipucu.innerHTML = ipucuIcerik(G.tanim, G.hoverT);
+    const gen = ipucu.offsetWidth || 130;
+    ipucu.style.left = Math.max(2, Math.min(kutu.clientWidth - gen - 2,
+      xx - gen / 2)) + 'px';
+    ipucu.style.top = (e.clientY - r.top < c.clientHeight / 2 ? 46 : 24) + 'px';
+    grafikImlecCiz(G, tSim);
+  });
+  c.addEventListener('pointerleave', () => {
+    ipucu.hidden = true; G.hoverT = null; grafikImlecCiz(G, tSim);
+  });
+  c.addEventListener('click', () => grafikBuyut(G.tanim.id));
+}
+
+// ---------------------------------------------------- büyütülmüş grafik
+const buyukG = { tanim: null, canvas: null, kutu: null };
+function grafikBuyut(id) {
+  const G = grafikler[id];
+  if (!G) return;
+  buyukG.tanim = G.tanim;
+  $('#buyutBaslik').textContent = G.tanim.ad +
+    (G.tanim.birim ? '  [' + G.tanim.birim + ']' : '');
+  $('#buyut').hidden = false;
+  // ölçüm özeti: en küçük, en büyük, temas anı, imleç
+  const K = S.kayit, N = K.t.length, o = S.ozet;
+  const tf = o.t_temas >= 0 ? kareIndeks(o.t_temas) : -1;
+  const kutular = [];
+  for (const s of G.tanim.seriler) {
+    let mn = Infinity, mx = -Infinity, mxT = 0;
+    for (let f = 0; f < N; f++) {
+      const v = s.al(K, f);
+      if (!isFinite(v)) continue;
+      if (v < mn) mn = v;
+      if (v > mx) { mx = v; mxT = K.t[f]; }
+    }
+    const ad = s.ad || G.tanim.ad;
+    const b = (v, n) => (isFinite(v) ? sayi(v, n) : '—');
+    kutular.push(`<div><dt>${ad} — en büyük</dt><dd>${b(mx, 2)} ` +
+      `<span style="font-weight:400;color:var(--metin3)">· ${b(mxT, 2)} s</span></dd></div>`);
+    kutular.push(`<div><dt>${ad} — en küçük</dt><dd>${b(mn, 2)}</dd></div>`);
+    if (tf >= 0) {
+      kutular.push(`<div><dt>${ad} — temas anı</dt><dd>${b(s.al(K, tf), 2)}</dd></div>`);
+    }
+  }
+  $('#buyutBilgi').innerHTML = '<dl style="display:contents">' +
+    kutular.join('') + '</dl>';
+  requestAnimationFrame(() => {
+    grafikArkaplanCiz(buyukG);
+    grafikImlecCiz(buyukG, tSim);
+  });
+}
+function grafikBuyutKapat() { $('#buyut').hidden = true; buyukG.tanim = null; }
+
+// =========================================================================
+//  CANLI TEKNİK KESİT  (2 boyutlu, teknik resim gibi)
+// =========================================================================
+let bacakSecim = 'yuk';          // 'yuk' = o an en yüklü bacak, ya da 0/1/2
+function teknikKur() {
+  const kap = $('#bacakSec');
+  const dugs = [['yuk', 'En yüklü'], [0, 'Bacak 1'], [1, 'Bacak 2'], [2, 'Bacak 3']]
+    .map(([v, ad]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = ad;
+      b.addEventListener('click', () => {
+        bacakSecim = v;
+        dugs.forEach(([bb, vv]) => bb.setAttribute('aria-pressed', String(vv === v)));
+      });
+      kap.appendChild(b);
+      return [b, v];
+    });
+  dugs.forEach(([b, v]) => b.setAttribute('aria-pressed', String(v === bacakSecim)));
+}
+
+function teknikCiz(k) {
+  const c = $('#teknikTuval');
+  const dpr = Math.min(devicePixelRatio, 2);
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  }
+  const x = c.getContext('2d');
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.clearRect(0, 0, w, h);
+  const R = (n) => renkOku(n) || '#888';
+
+  // hangi bacak?
+  let i = bacakSecim;
+  if (i === 'yuk') {
+    i = 0;
+    for (let j = 1; j < 3; j++) if (k.s[j] > k.s[i]) i = j;
+  }
+  const s_mm = Math.max(0, Math.min(OLCU.DUSEY_STROK + 8, k.s[i] * 1000));
+  const th = bacakAcisi(s_mm);
+  const n = bacakNoktalari(th);
+  const f = kareIndeks(k.t);
+  const Kk = S.kayit;
+  const Fa = Kk.Fa[f][i], Nb = Kk.Nb ? Kk.Nb[f][i] : 0, Ft = Kk.Ftb ? Kk.Ftb[f][i] : 0;
+
+  // --- ölçek: mm -> piksel ---
+  const u0 = -70, w0 = -165, en = 760, boy = 545;
+  const sk = Math.min(w / en, h / boy);
+  const ox = (w - en * sk) / 2, oy = (h - boy * sk) / 2;
+  const X = (u) => ox + (u - u0) * sk;
+  const Y = (v) => oy + (boy - (v - w0)) * sk;
+  x.lineJoin = 'round'; x.lineCap = 'round';
+  x.font = '10px ' + getComputedStyle(document.body).getPropertyValue('--f-say');
+
+  // --- zemin: kubbeli pabucun en alt noktası. Gövde çizimde sabit durduğu
+  //     için gövde inerken zemin yukarı çıkar ---
+  const wz = n.TEMAS[1];
+  x.strokeStyle = R('--metin2'); x.lineWidth = 1.6;
+  x.beginPath(); x.moveTo(X(-60), Y(wz)); x.lineTo(X(700), Y(wz)); x.stroke();
+  x.lineWidth = 1; x.globalAlpha = 0.5;
+  for (let u = -55; u < 700; u += 14) {
+    x.beginPath(); x.moveTo(X(u), Y(wz)); x.lineTo(X(u + 9), Y(wz) + 9 * sk * 1.0);
+    x.stroke();
+  }
+  x.globalAlpha = 1;
+
+  // --- gövde: eksen + karbon boru + alt blok ---
+  const boruUst = OLCU.A_Z + 75;           // karbon borunun çizilen kısmı
+  x.strokeStyle = R('--cizgi2'); x.setLineDash([9, 4, 2, 4]); x.lineWidth = 1;
+  x.beginPath(); x.moveTo(X(0), Y(-150)); x.lineTo(X(0), Y(boruUst + 5)); x.stroke();
+  x.setLineDash([]);
+  x.fillStyle = R('--metin'); x.globalAlpha = 0.16;
+  x.fillRect(X(KTR.BORU_R - 15), Y(boruUst), 30 * sk, boruUst * sk);
+  x.fillRect(X(0), Y(KTR.ALT_BLOK_Z[1]), KTR.ALT_BLOK_R * sk,
+    (KTR.ALT_BLOK_Z[1] - KTR.ALT_BLOK_Z[0]) * sk);
+  x.globalAlpha = 1;
+  x.strokeStyle = R('--metin2'); x.lineWidth = 1;
+  x.strokeRect(X(KTR.BORU_R - 15), Y(boruUst), 30 * sk, boruUst * sk);
+
+  // --- bacak üçgeni D-C-F ---
+  const P = (p) => [X(p[0]), Y(p[1])];
+  const [Dx, Dy] = P(n.D), [Cx, Cy] = P(n.C), [Fx, Fy] = P(n.F);
+  x.beginPath(); x.moveTo(Dx, Dy); x.lineTo(Cx, Cy); x.lineTo(Fx, Fy); x.closePath();
+  x.fillStyle = R('--vurgu'); x.globalAlpha = 0.17; x.fill(); x.globalAlpha = 1;
+  x.strokeStyle = R('--vurgu'); x.lineWidth = 2.2; x.stroke();
+
+  // --- ayak sapı ve pabuç: bacağa sabit, bacakla birlikte döner; taban kubbeli ---
+  const bacakla = ([u, v]) => {          // dönmemiş haldeki noktayı θ kadar döndür
+    const [ru, rv] = donustur(u - OLCU.D_U, v - OLCU.D_Z, th);
+    return [X(OLCU.D_U + ru), Y(OLCU.D_Z + rv)];
+  };
+  const cokgen = (noktalar, opak) => {
+    x.beginPath();
+    noktalar.map(bacakla).forEach(([px, py], j) => (j ? x.lineTo(px, py) : x.moveTo(px, py)));
+    x.closePath();
+    x.fillStyle = R('--metin2'); x.globalAlpha = opak; x.fill(); x.globalAlpha = 1;
+    x.strokeStyle = R('--metin2'); x.lineWidth = 1.2; x.stroke();
+  };
+  const pUst = OLCU.AYAK_TEMAS_Z + OLCU.PAD_T, su = OLCU.SAP_U / 2;
+  cokgen([[OLCU.F_U - su, OLCU.F_Z], [OLCU.F_U + su, OLCU.F_Z],
+          [OLCU.F_U + su, pUst], [OLCU.F_U - su, pUst]], 0.3);
+  const kubbe = pabucProfili(12).slice(0, -2);          // [r, h], r = 0 .. 50 mm
+  cokgen([[-OLCU.PAD_D / 2, OLCU.PAD_T]]
+    .concat(kubbe.slice(1).reverse().map(([r, hh]) => [-r, hh]), kubbe,
+            [[OLCU.PAD_D / 2, OLCU.PAD_T]])
+    .map(([r, hh]) => [OLCU.F_U + r, OLCU.AYAK_TEMAS_Z + hh]), 0.5);
+
+  // --- amortisör A -> C ---
+  const [Ax, Ay] = P(n.A);
+  x.strokeStyle = R('--uyari'); x.lineWidth = 5;
+  x.beginPath(); x.moveTo(Ax, Ay); x.lineTo(Cx, Cy); x.stroke();
+  x.strokeStyle = R('--yuzey'); x.lineWidth = 1.6;
+  x.beginPath(); x.moveTo(Ax, Ay); x.lineTo(Cx, Cy); x.stroke();
+  // mafsal çemberleri
+  for (const [px, py, r] of [[Dx, Dy, 7], [Cx, Cy, 6], [Ax, Ay, 6], [Fx, Fy, 5]]) {
+    x.beginPath(); x.arc(px, py, r, 0, Math.PI * 2);
+    x.fillStyle = R('--yuzey'); x.fill();
+    x.strokeStyle = R('--metin'); x.lineWidth = 1.4; x.stroke();
+  }
+  x.fillStyle = R('--metin2'); x.textAlign = 'right'; x.textBaseline = 'middle';
+  x.fillText('D', Dx - 10, Dy); x.fillText('A', Ax - 10, Ay);
+  x.textAlign = 'left';
+  x.fillText('C', Cx + 10, Cy); x.fillText('F', Fx + 9, Fy - 8);
+
+  // --- strok ölçü çizgisi ---
+  const ux = 650;
+  x.strokeStyle = R('--iyi'); x.lineWidth = 1;
+  x.beginPath();
+  // ölçü, zemine değen noktanın (kubbenin en alt noktası) yükselmesini gösterir
+  const z0 = OLCU.AYAK_TEMAS_Z;
+  x.moveTo(X(n.TEMAS[0]), Y(z0)); x.lineTo(X(ux + 24), Y(z0));
+  x.moveTo(X(n.TEMAS[0]), Y(n.TEMAS[1])); x.lineTo(X(ux + 24), Y(n.TEMAS[1]));
+  x.stroke();
+  const sUst = z0 + OLCU.DUSEY_STROK;
+  x.beginPath(); x.moveTo(X(ux), Y(z0)); x.lineTo(X(ux), Y(sUst));
+  x.stroke();
+  okUcu(x, X(ux), Y(z0), 0, -1, R('--iyi'));
+  okUcu(x, X(ux), Y(sUst), 0, 1, R('--iyi'));
+  x.save();
+  x.translate(X(ux) - 6, (Y(z0) + Y(sUst)) / 2);
+  x.rotate(-Math.PI / 2);
+  x.textAlign = 'center'; x.textBaseline = 'bottom';
+  x.fillStyle = R('--iyi');
+  x.fillText(`metal durağa kadar ${OLCU.DUSEY_STROK} mm`, 0, 0);
+  x.restore();
+  // mevcut strok dolgusu
+  x.fillStyle = R('--iyi'); x.globalAlpha = 0.33;
+  x.fillRect(X(ux) - 5, Y(z0 + s_mm), 10, (Y(z0) - Y(z0 + s_mm)));
+  x.globalAlpha = 1;
+
+  // --- kuvvet okları ---
+  // zemin kuvvetleri, kubbenin zemine değdiği noktada gösterilir
+  const Gx = X(n.TEMAS[0]);
+  const Fmax = 2200;
+  const olc = (F) => Math.min(95, 95 * F / Fmax) * 1;
+  if (Nb > 1) {
+    const L = olc(Nb);
+    x.strokeStyle = R('--kritik'); x.lineWidth = 2.4;
+    x.beginPath(); x.moveTo(Gx, Y(wz) + 2); x.lineTo(Gx, Y(wz) + 2 - L); x.stroke();
+    okUcu(x, Gx, Y(wz) + 2 - L, 0, -1, R('--kritik'), 6);
+    x.fillStyle = R('--kritik'); x.textAlign = 'center'; x.textBaseline = 'bottom';
+    x.fillText('N = ' + Math.round(Nb) + ' N', Gx, Y(wz) - L - 6);
+  }
+  if (Ft > 1) {
+    const L = olc(Ft * 2);
+    x.strokeStyle = R('--uyari'); x.lineWidth = 2;
+    x.beginPath(); x.moveTo(Gx, Y(wz) + 14); x.lineTo(Gx - L, Y(wz) + 14); x.stroke();
+    okUcu(x, Gx - L, Y(wz) + 14, -1, 0, R('--uyari'), 5);
+  }
+  // kartuş kuvveti oku (A->C ekseni boyunca)
+  if (Fa > 1) {
+    const dx = Cx - Ax, dy = Cy - Ay, dl = Math.hypot(dx, dy) || 1;
+    const L = olc(Fa);
+    const mx = (Ax + Cx) / 2 + dy / dl * 16, my = (Ay + Cy) / 2 - dx / dl * 16;
+    x.strokeStyle = R('--uyari'); x.lineWidth = 2.2;
+    x.beginPath(); x.moveTo(mx - dx / dl * L / 2, my - dy / dl * L / 2);
+    x.lineTo(mx + dx / dl * L / 2, my + dy / dl * L / 2); x.stroke();
+    okUcu(x, mx + dx / dl * L / 2, my + dy / dl * L / 2, dx / dl, dy / dl,
+      R('--uyari'), 5);
+  }
+
+  // --- sayısal değerler (canvas'ın yanındaki gerçek metin sütununda) ---
+  const satirlar = [
+    ['Bacak', String(i + 1), 0],
+    ['Strok', sayi(s_mm, 1) + ' mm', 1],
+    ['Stroğun oranı', '%' + Math.round(s_mm / OLCU.DUSEY_STROK * 100), 0],
+    ['Çerçeve dönmesi', sayi(th * 180 / Math.PI, 2) + '°', 0],
+    ['Kartuş boyu', sayi(amortisorBoyu(th), 1) + ' mm', 0],
+    ['Amortisör sıkışması', sayi(OLCU.L_AMORT_ACIK - amortisorBoyu(th), 1) + ' / '
+      + Math.round(AMORT.S * 1000) + ' mm', 0],
+    ['Dip tamponu', (OLCU.L_AMORT_ACIK - amortisorBoyu(th)) / 1000 > AMORT.x_d ? 'METAL DURAK'
+      : ((OLCU.L_AMORT_ACIK - amortisorBoyu(th)) / 1000 > AMORT.x_t ? 'halka ezik' : 'boşta'), 0],
+    ['Kartuş kuvveti', Math.round(Fa) + ' N', 1],
+    ['Ayak düşey tepkisi', Math.round(Nb) + ' N', 1],
+    ['Ayak yanal kuvveti', Math.round(Ft) + ' N', 0],
+    ['Kuvvet oranı MA', sayi(kuvvetOrani(th), 3), 0],
+    ['Ayak yarıçapı', Math.round(n.F[0]) + ' mm', 0],
+  ];
+  const kap = $('#teknikDegerler');
+  if (!kap._kur) {
+    kap.innerHTML = satirlar.map(([a, , v]) =>
+      `<dt${v ? ' class="vurgulu"' : ''}>${a}</dt><dd${v ? ' class="vurgulu"' : ''}></dd>`
+    ).join('');
+    kap._dd = kap.querySelectorAll('dd');
+    kap._kur = true;
+  }
+  for (let j = 0; j < satirlar.length; j++) {
+    if (kap._dd[j]) kap._dd[j].textContent = satirlar[j][1];
+  }
+}
+
+function okUcu(x, px, py, dx, dy, renk, b) {
+  b = b || 6;
+  const a = Math.atan2(dy, dx);
+  x.beginPath();
+  x.moveTo(px, py);
+  x.lineTo(px - b * Math.cos(a - 0.42), py - b * Math.sin(a - 0.42));
+  x.lineTo(px - b * Math.cos(a + 0.42), py - b * Math.sin(a + 0.42));
+  x.closePath(); x.fillStyle = renk; x.fill();
+}
+
+// =========================================================================
+//  KUMANDA ARAYÜZÜ
+// =========================================================================
+let yenidenHesapZaman = null;
+function degisti() {
+  clearTimeout(yenidenHesapZaman);
+  yenidenHesapZaman = setTimeout(() => { kos(); senaryoIsaretle(); }, 110);
+}
+
+function kumandalariKur() {
+  const kap = $('#kumandalar');
+  for (const g of KUMANDALAR) {
+    const d = document.createElement('details');
+    d.className = 'panel grup'; d.open = g.acik;
+    const sum = document.createElement('summary');
+    sum.appendChild(document.createTextNode(g.grup));
+    d.appendChild(sum);
+    const ic = document.createElement('div');
+    ic.className = 'panel-ic';
+    d.appendChild(ic);
+    for (const o of g.ogeler) ic.appendChild(ogeKur(o));
+    kap.appendChild(d);
+  }
+}
+
+const ogeYenile = [];
+function ogeKur(o) {
+  if (o.tip === 'kay') {
+    const d = document.createElement('div');
+    d.className = 'ayar';
+    const lab = document.createElement('label');
+    lab.htmlFor = 'k_' + o.id;
+    const ad = document.createElement('span'); ad.textContent = o.ad;
+    const deg = document.createElement('span'); deg.className = 'deger say';
+    lab.append(ad, deg);
+    const inp = document.createElement('input');
+    inp.type = 'range'; inp.id = 'k_' + o.id;
+    inp.min = o.min; inp.max = o.max; inp.step = o.adim; inp.value = P[o.id];
+    const ip = document.createElement('div');
+    ip.className = 'ipucu'; ip.textContent = o.ipucu || '';
+    d.append(lab, inp, ip);
+    const yaz = () => {
+      deg.textContent = sayi(P[o.id], o.basamak) + (o.birim ? ' ' + o.birim : '');
+      d.classList.toggle('degisti', Math.abs(P[o.id] - BASLANGIC[o.id]) > 1e-9);
+    };
+    inp.addEventListener('input', () => {
+      P[o.id] = parseFloat(inp.value); yaz(); degisti();
+    });
+    ogeYenile.push(() => {
+      inp.value = P[o.id]; yaz();
+      if (o.bagli) {
+        const ac = typeof o.bagli === 'function' ? o.bagli() : P[o.bagli];
+        d.style.display = ac ? '' : 'none';
+      }
+    });
+    yaz();
+    return d;
+  }
+  if (o.tip === 'anahtar') {
+    const l = document.createElement('label');
+    l.className = 'anahtar';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox'; inp.id = 'k_' + o.id; inp.checked = !!P[o.id];
+    const sp = document.createElement('span');
+    sp.className = 'yazi';
+    sp.innerHTML = o.ad + (o.ipucu ? `<small>${o.ipucu}</small>` : '');
+    l.append(inp, sp);
+    inp.addEventListener('change', () => {
+      P[o.id] = inp.checked; degisti(); ogeYenile.forEach((f) => f());
+    });
+    ogeYenile.push(() => { inp.checked = !!P[o.id]; });
+    return l;
+  }
+  if (o.tip === 'ikili') {
+    const d = document.createElement('div');
+    d.className = 'ikili';
+    const t = document.createElement('span'); t.textContent = o.ad;
+    const sec = document.createElement('div'); sec.className = 'secenekler';
+    const dugs = o.secenekler.map(([ad, v]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = ad;
+      b.addEventListener('click', () => { P[o.id] = v; degisti(); ogeYenile.forEach((f) => f()); });
+      sec.appendChild(b);
+      return [b, v];
+    });
+    const ip = document.createElement('div');
+    ip.className = 'ipucu'; ip.textContent = o.ipucu || '';
+    d.append(t, sec, ip);
+    ogeYenile.push(() => {
+      for (const [b, v] of dugs) b.setAttribute('aria-pressed', String(P[o.id] === v));
+    });
+    return d;
+  }
+  return document.createElement('div');
+}
+
+function senaryolariKur() {
+  const kap = $('#senaryolar');
+  SENARYOLAR.forEach((s, idx) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = s.renk;
+    b.innerHTML = `<span class="nokta"></span><span>${s.ad}</span>` +
+      `<small>${s.not}</small>`;
+    b.addEventListener('click', () => {
+      P = Object.assign({}, BASLANGIC, s.p);
+      ogeYenile.forEach((f) => f());
+      kos(); senaryoIsaretle(idx);
+    });
+    kap.appendChild(b);
+  });
+}
+function senaryoIsaretle(zorla) {
+  const dugs = $('#senaryolar').querySelectorAll('button');
+  let aktif = zorla;
+  if (aktif === undefined) {
+    aktif = -1;
+    SENARYOLAR.forEach((s, i) => {
+      const hedef = Object.assign({}, BASLANGIC, s.p);
+      if (Object.keys(BASLANGIC).every((k) => {
+        const a = hedef[k], b = P[k];
+        return typeof a === 'number' ? Math.abs(a - b) < 1e-9 : a === b;
+      })) aktif = i;
+    });
+  }
+  dugs.forEach((b, i) => b.setAttribute('aria-pressed', String(i === aktif)));
+}
+
+// =========================================================================
+//  OYNATICI
+// =========================================================================
+const HIZLAR = [[0.1, '0,1×'], [0.3, '0,3×'], [0.6, '0,6×'], [1, '1×']];
+function oynaticiKur() {
+  const hg = $('#hizGrup');
+  const dugs = HIZLAR.map(([v, ad]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = ad;
+    b.addEventListener('click', () => {
+      hiz = v; dugs.forEach(([bb, vv]) => bb.setAttribute('aria-pressed', String(vv === v)));
+    });
+    hg.appendChild(b);
+    return [b, v];
+  });
+  dugs.forEach(([b, v]) => b.setAttribute('aria-pressed', String(v === hiz)));
+
+  $('#oynDug').addEventListener('click', () => {
+    const son = S.kayit.t[S.kayit.t.length - 1];
+    if (!oynuyor && tSim >= son - 1e-6) tSim = 0;
+    oynuyor = !oynuyor;
+    $('#oynDug').textContent = oynuyor ? '❚❚' : '▶';
+  });
+  $('#tekrarDug').addEventListener('click', () => {
+    tSim = 0; oynuyor = true; kamAtla = true; $('#oynDug').textContent = '❚❚';
+  });
+  const kay = $('#zamanKay');
+  kay.addEventListener('input', () => {
+    const son = S.kayit.t[S.kayit.t.length - 1] || 1;
+    tSim = son * kay.value / 1000;
+    oynuyor = false; kamAtla = true; $('#oynDug').textContent = '▶';
+    // duraklatılmışken döngü zamanı güncellemiyor; yazıyı burada tazele
+    $('#oynZaman').textContent = sayi(tSim, 3) + ' / ' + sayi(son, 3) + ' s';
+  });
+
+  const kd = $('#kamDug');
+  const kdugs = [['genel', 'Genel'], ['yan', 'Yandan'], ['ayak', 'Ayak detayı'],
+                 ['ust', 'Üstten']].map(([k, ad]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = ad;
+    b.addEventListener('click', () => {
+      kamAd = k; kam = Object.assign({}, KAMERALAR[k]); kamAtla = true;
+      kdugs.forEach(([bb, kk]) => bb.setAttribute('aria-pressed', String(kk === k)));
+    });
+    kd.appendChild(b);
+    return [b, k];
+  });
+  kdugs.forEach(([b, k]) => b.setAttribute('aria-pressed', String(k === kamAd)));
+}
+function zamanKayGuncelle() {
+  const son = S.kayit.t[S.kayit.t.length - 1] || 1;
+  $('#oynZaman').textContent = sayi(tSim, 3) + ' / ' + sayi(son, 3) + ' s';
+  $('#zamanKay').value = String(Math.round(1000 * tSim / son));
+}
+
+// =========================================================================
+//  AÇIKLAMA PANELLERİ
+// =========================================================================
+function aciklamalariYaz() {
+  const it = new ItkiSistemi({});            // tasarım sayıları için
+  const tam = it.tamItki();
+  const kin = kinematikDenetimi();           // kubbeli pabucun temas noktası için
+  $('#itkiAciklama').innerHTML = `
+<p>Kısa cevap: <strong>lüleler kendi başına hiçbir şeye karar vermez.</strong>
+Lüle sabit bir delikten ibarettir; ürettiği kuvvet yalnızca iki şeye bağlıdır —
+o anda tüpte kalan basınç, ve valfin ne kadar açık olduğu. Kararı veren
+aviyoniktir. Aşağıda sırasıyla: lüle neye göre kuvvet üretir, valf nasıl
+ayarlanır, aviyonik neye bakarak karar verir.</p>
+
+<h4>1. Lüle — geometrisi sabit, kuvveti basınçla belirleniyor</h4>
+<p>Geçen seneki KTR'de (s.13–14) lüle De Laval tipi seçilmiş ve ölçüleri
+verilmiş: giriş Ø14 mm, <strong>boğaz Ø3 mm</strong>, <strong>çıkış Ø10 mm</strong>,
+yakınsak koni 45°, ıraksak koni 15°. Gaz <strong>azot</strong>
+(γ = 1,4, R = 296,8 J/kg·K). Bu simülasyon o ölçüleri aynen kullanıyor ve
+şunları <em>hesaplıyor</em>:</p>
+<ul>
+<li>Alan oranı A<sub>çıkış</sub>/A<sub>boğaz</sub> =
+<strong>${sayi(it.alan_orani, 2)}</strong> → çıkış Mach sayısı
+<strong>${sayi(it.Me, 2)}</strong> (KTR: 4,03)</li>
+<li>Çıkış sıcaklığı <strong>${sayi(it.Te, 1)} K</strong> (KTR: 70,1 K) → çıkış
+hızı <strong>${sayi(it.Ve, 0)} m/s</strong> (KTR: 688 m/s)</li>
+<li>300 bar'da debi <strong>${sayi(tam.mdot, 3)} kg/s</strong> (KTR: 0,488)</li>
+<li>İtki = λ·ṁ·V<sub>e</sub> + (P<sub>e</sub>−P<sub>atm</sub>)·A<sub>e</sub> =
+<strong>${sayi(it.F_tasarim, 0)} N</strong></li>
+</ul>
+<p>Boğazda akış <em>boğulur</em>: gaz orada ses hızına çıkar ve debi artık
+dışarıdaki havaya değil, yalnızca boğaz kesitine ve tanktaki basınç–sıcaklığa
+bağlı olur. Bu yüzden <strong>itki, anlık tüp basıncıyla doğru orantılıdır</strong>
+— tüp boşaldıkça itki de düşer.</p>
+<p><strong>Iraksak koni kaybı:</strong> KTR'deki 344 N, 15°'lik ıraksak koninin
+yarattığı sapma kaybını (λ = 0,983) içermeyen ideal itkidir. Kayıp uygulanınca
+lüle başına <strong>${sayi(it.F_tasarim, 0)} N</strong>, üçü birden
+<strong>${Math.round(3 * it.F_tasarim)} N</strong> çıkıyor (kayıpsız 1032 N).
+Simülasyon kayıplı değeri kullanıyor.</p>
+
+<h4>2. Tüp boşalması — gazın bitmesi gerçek bir kısıt</h4>
+<p>9 litrelik tüp 300 bar'da <strong>${sayi(it.m_gaz0, 2)} kg</strong> azot
+tutuyor (KTR: 3,05 kg). Gaz çıktıkça geride kalan gaz genişleyip <em>soğur</em>,
+basınç düşer. Üç lüle birlikte saniyede
+<strong>${sayi(3 * tam.mdot, 2)} kg</strong> harcıyor; tam itkide tüp sadece
+<strong>${sayi(it.m_gaz0 / (3 * tam.mdot), 1)} saniye</strong> yetiyor.
+KTR'nin kendi hesabı da aynı: 5 saniye havada asılı kalınca basınç 85,8 bar'a,
+sıcaklık −65 °C'ye iniyor. Simülasyon 86,2 bar ve −64 °C veriyor.</p>
+
+<h4>3. Valf — kuvveti ayarlayan şey bu</h4>
+<p>ÖTR'de aç-kapa selenoid valfler vardı; <strong>KTR'de step motorla sürülen
+oransal iğne valfe geçildi</strong> (s.22, s.30). Fark büyük:</p>
+<ul>
+<li><strong>Oransal iğne valf (KTR, varsayılan):</strong> iğne boğazı kısmen
+kapatarak <em>anlık efektif boğaz alanını</em> sürekli ayarlar. Musluk gibi.
+İtki = λ·C<sub>F</sub>·P₀·A<sub>boğaz,anlık</sub> — KTR'nin s.14'teki denklemi
+budur. Zaafı: step motor iğneyi kapalıdan tam açığa
+<strong>${P.t_strok_ms} ms</strong>'de götürür, yani selenoidden onlarca kat
+yavaştır.</li>
+<li><strong>Aç-kapa selenoid (ÖTR):</strong> ya tam açık ya tam kapalı. İtki
+ancak saniyede onlarca kez açıp kapayarak (PWM) ayarlanabilir. 10 ms'de açılır
+ama ortalama itki kaba kalır.</li>
+</ul>
+<p>İkisini "Valf tipi" düğmesinden değiştirip sonucu karşılaştırın: aynı
+koşullarda oransal valf şartname sınırında inerken aç-kapa valf daha sert
+iniyor. KTR'deki değişiklik doğru bir karardı ve bunu sayıyla görebiliyorsunuz.</p>
+
+<h4>4. Aviyonik — kararı veren bu, ve şunlara bakıyor</h4>
+<p>Sorunuzun asıl cevabı burası. Kontrolcü saniyede
+<strong>${P.f_orn} kez</strong> (KTR'nin 6 serbestlik dereceli benzetimi de
+100 Hz kullanıyor) şu <em>dört</em> ölçümü alır:</p>
+<ul>
+<li><strong>İrtifa</strong> — en alçak ayağın yerden yüksekliği. Gerçekte bunu
+gövdenin altındaki TF02 Pro lazer mesafe ölçer sağlıyor (CAD'de z = 4–30 mm'de,
+aşağı bakıyor).</li>
+<li><strong>Düşey hız</strong></li>
+<li><strong>Yönelim</strong> — gövdenin ne kadar yatık olduğu (IMU'dan)</li>
+<li><strong>Açısal hız</strong> — ne kadar hızlı devrildiği (jiroskop)</li>
+</ul>
+<p>Sonra iki ayrı hesap yapar:</p>
+<ul>
+<li><strong>Ne kadar itki?</strong> Her irtifaya bir hedef hız atar
+(<code>v* = −√(v_temas² + 2·a·h)</code>: yüksekken hızlı, yaklaşırken yavaş).
+Gerçek hız bu hedeften saparsa PID toplam itkiyi arttırıp azaltır. Profilin
+gerektirdiği yavaşlama ayrıca önden verilir, yoksa roket profilin hep gerisinde
+kalırdı.</li>
+<li><strong>Hangi lüleye ne kadar?</strong> Üç lüle ağırlık merkezinden
+<strong>${Math.round(it.r_lule * 1000)} mm</strong> uzakta (CAD ölçüsü).
+Aralarına itki farkı koymak gövdeyi döndürür. Kontrolcü gereken momenti
+yönelim hatasından bulur (KTR s.51'deki Rodrigues hata vektörü mantığı) ve üç
+lüleye paylaştırır:
+<code>F_i = F_toplam/3 + (2/3r)·(M_x·sin a_i − M_y·cos a_i)</code>.</li>
+</ul>
+<p>Yani lüle 1 "şu an 105 N vereyim" demiyor; aviyonik "toplam 316 N lazım ve
+gövde dik, o halde üçü de eşit" diyor, valf o açıklığa gidiyor, lüle de o
+basınçta ne kadar kuvvet veriyorsa onu veriyor. "Eğim düzeltme gücü"nü 0 yapıp
+paylaştırmanın ne işe yaradığını görebilirsiniz.</p>
+<p>Son olarak: zemine değdiği anda valfler kapanır, çünkü zeminde itmeye devam
+etmek roketi devirir.</p>`;
+
+  $('#sekmeAciklama').innerHTML = `
+<p><strong>Kısa cevap: bu amortisörün içinde yay yok, bu yüzden roket hiçbir hızda
+geri sekmiyor; ama duran roketi de taşımıyor. Roket, ağırlığıyla amortisörü
+yavaşça sonuna kadar iter ve poliüretan bir halkaya oturur.</strong></p>
+<p>${AMORT.URUN} bir <em>endüstriyel, kendini ayarlayan hidrolik amortisör</em>:
+içindeki yağ, strok ilerledikçe sırayla kapanan küçük deliklerden geçer. Kuvveti
+hızın karesiyle büyür, delikler kapandıkça da artar. Öhlins gibi yaylı bir
+amortisör ağırlığı yayıyla taşırdı (1,85 mm çökme); bu amortisörün yalnızca
+${AMORT.F0}–${AMORT.F1} N'luk zayıf bir geri dönüş yayı var. Roketin bir bacağa düşen
+ağırlığı ise kartuşta yaklaşık 320 N eder.</p>
+<p>Bu yüzden her inişin sonunda aynı şey olur: darbe amortisörde ısıya döner,
+roket yavaşça çöker ve itici, amortisör ${Math.round(AMORT.x_t * 1000)} mm sıkışınca
+poliüretan halkaya (P14) değer. Sert (Shore 95A) halka ağırlığı taşır ve yalnızca yarım milimetre kadar ezilir.
+Halka ${Math.round((AMORT.x_d - AMORT.x_t) * 1000)} mm ezilirse itici metal durağa
+(P13'ün ağzı) dayanır. Bu durak amortisörü strok sonundan 1 mm önce korur; Airtac
+bunu şart koşuyor.</p>
+<p>İtkiyi kapatıp roketi değişik hızlarda düşürdüğümüzde (düz zemin, 32 kg):</p>
+<div class="sarili"><table class="veri"><thead><tr>
+<th>Temas hızı</th><th>Amortisör sıkışması</th><th>Metal durak</th><th>Toplam zemin tepkisi</th>
+<th>Geri sekme</th></tr></thead><tbody>
+<tr><td>0,2 m/s (şartname)</td><td>16,0 mm</td><td>hayır</td><td>3,7 g</td><td class="ok">0,000 m/s</td></tr>
+<tr><td>1,5 m/s</td><td>16,5 mm</td><td>hayır</td><td>5,5 g</td><td class="ok">0,000 m/s</td></tr>
+<tr><td>2,0 m/s (tasarım)</td><td>16,7 mm</td><td>hayır</td><td>6,9 g</td><td class="ok">0,000 m/s</td></tr>
+<tr><td>3,0 m/s</td><td>17,2 mm</td><td>hayır</td><td>11,8 g</td><td class="ok">0,000 m/s</td></tr>
+<tr><td>4,4 m/s</td><td>17,6 mm</td><td>hayır</td><td>25,2 g</td><td class="ok">0,000 m/s</td></tr>
+</tbody></table></div>
+<p><strong>0,2 m/s'de neden 3,7 g?</strong> Temas çok yumuşak ama sonrası değil: roket
+ağırlığıyla 43 mm kadar çöker. Hidrolik direnç yavaş harekette küçük olduğu için
+çökme sırasında biraz hızlanır ve sonunda halkaya oturur; tepe bu oturma anıdır.
+Halka bilerek sert (Shore 95A) seçildi: 85A'lık yumuşak halka bu tepeyi 3 g'ye
+indiriyordu, ama roket eğik inince önce değen bacak metal durağa oturuyordu
+(<code>analiz/03b_halka_sertligi.txt</code>).</p>
+<p><strong>Ne zaman metal durağa değer?</strong> Düz inişte 5 m/s'ye kadar hiç değmez.
+Eğik inişte önce değen bacakta değer: 12–15° eğimde 1,5 m/s'den, 10°'de 2 m/s'den,
+6–8°'de 2,5 m/s'den itibaren (tek bacağa binen yük, amortisörün ayarlandığı kütleden
+büyük). O zaman darbenin kalanı yapıya gider; "Sonuç" kartı bunu
+<em>metal durağa oturdu</em> diye gösterir.</p>
+<p><strong>Bir uyarı:</strong> üretici amortisörün iç yapısını yayımlamıyor. Model,
+kendini ayarlayan amortisörün ideal hâli ve Airtac'ın enerji–hız eğrisine kalibre
+edildi. Kesin davranış ancak düşürme testiyle ölçülür.</p>`;
+
+  $('#cadAciklama').innerHTML = `
+<p>Gövdenin ve itki sisteminin geometrisi <strong>ZENITH'in geçen seneki KTR
+raporundan ve onun CAD montajından</strong> okunuyor. Montajdaki 166 katı parçanın
+sınır kutuları ölçüldü, eksen basınç tüpünün merkezi alındı. Aşağıdakiler tahmin
+değil, o montajdan çıkan sayılar:</p>
+<div class="sarili"><table class="veri"><thead><tr>
+<th>Parça</th><th>Yarıçap</th><th>Yükseklik (z)</th><th>Not</th>
+</tr></thead><tbody>
+<tr><td>Karbon gövde boruları (3)</td><td>128,5 mm</td><td>0 – 935 mm</td><td>Ø30, bacaklarla aynı hizada</td></tr>
+<tr><td>Basınç tüpü</td><td>87,5 mm</td><td>170 – 740 mm</td><td>kompozit, 9 L</td></tr>
+<tr><td>Hizalama yüzükleri (2)</td><td>137,6 mm</td><td>207 / 684 mm</td><td>silikon tamponlu</td></tr>
+<tr><td>Manifold</td><td>eksende</td><td>746 – 837 mm</td><td>Al 7075, 8 girişli</td></tr>
+<tr><td>Üst plaka (Top_Block)</td><td>291 mm</td><td>918 – 930 mm</td><td>3 kollu</td></tr>
+<tr><td><strong>Lüleler (3)</strong></td><td><strong>300 mm</strong></td><td>928 – 947 mm</td><td>azimut 45°/165°/285°</td></tr>
+<tr><td>İğne valfler (3)</td><td>291 mm</td><td>938 – 991 mm</td><td>step motorlu</td></tr>
+<tr><td>Step motorlar (3)</td><td>258 mm</td><td>937 – 993 mm</td><td>ESS24</td></tr>
+<tr><td>Vinç gözü (U-bolt)</td><td>eksende</td><td>943 – 1049 mm</td><td>roket buradan asılıyor</td></tr>
+<tr><td>TF02 Pro lazer ölçer</td><td>eksende</td><td>4 – 30 mm</td><td>aşağı bakar</td></tr>
+<tr><td>Aviyonik kutusu</td><td>—</td><td>42 – 156 mm</td><td>altta</td></tr>
+</tbody></table></div>
+
+<h4>Öne çıkanlar</h4>
+<ul>
+<li><strong>Lüleler üstte:</strong> üç lüle üst plakanın kollarının ucunda,
+r = 300 mm'de ve aşağı bakıyor. Uzun moment kolu eğimi düzeltmeyi kolaylaştırır.</li>
+<li><strong>Lüleler bacaklarla aynı hizada değil, 60° kaymış:</strong> CAD'de
+bacaklar 345°, lüleler 45°. Bir lüleye fazla itki vermek roketi bir bacağa
+değil, iki bacağın arasına doğru devirir.</li>
+<li><strong>Gaz azot</strong> (R = 296,8 J/kg·K), tüp Ø175 × 570 mm, valf oransal
+(step motorlu iğne valf).</li>
+</ul>
+<p><strong>Kütle:</strong> iniş takımı şartnamenin üst sınırı olan 32 kg ile
+tasarlandığı için varsayılan o; kaydırıcıdan değiştirebilirsiniz.</p>
+<p><strong>Egzoz ve iniş takımı:</strong> lüleler r = 300 mm'de ve aşağı bakıyor;
+bacağın üst bağlantısı (A noktası) r = ${Math.round(OLCU.A_U)} mm'de, kartuşun
+alt ucu (C) r = ${Math.round(OLCU.C_U)} mm'de. Egzoz hüzmesi bu bölgeden geçiyor;
+3B görünümde gözle takip edebilirsiniz.</p>`;
+
+  $('#sinirAciklama').innerHTML = `
+<div class="uyari-kutu"><strong>Bu bir anlama ve gösterme aracıdır, mühendislik
+doğrulaması değildir.</strong> Gerçek doğrulama ancak düşürme testiyle olur:
+roketi (ya da eşdeğer kütleli bir test düzeneğini) vinçle kaldırıp bırakmak,
+ivmeölçerle ölçmek ve bu eğrilerle karşılaştırmak. Simülasyon o testi
+<em>tasarlamanıza</em> yardım eder, yerini almaz.</div>
+
+<p>Fizik modeli <code>hesaplar/sim.py</code> dosyasından taşındı ve o dosyanın
+kabullerini aynen taşıyor:</p>
+<ul>
+<li><strong>Bacak kütlesi ihmal edildi</strong> (üç bacağın dönen parçaları
+yaklaşık 2,4 kg, roket 32 kg). Tepe kuvvetini bir miktar düşük gösterir;
+yapısal hesaplardaki emniyet katsayıları bunu kapsıyor.</li>
+<li><strong>Zemin rijit kabul edildi</strong> (beton). Toprak ya da çim daha
+fazla enerji yutar — yani emniyetli taraf.</li>
+<li><strong>Amortisörün iç yapısı bilinmiyor.</strong> ${AMORT.URUN} kendini
+ayarlayan hidrolik bir amortisör; model onun ideal hâli:
+<code>F = K·v² / (1 − x/S_h)</code> + geri dönüş yayı + poliüretan halka + metal durak.
+K, Airtac'ın enerji–hız eğrisinden (kütlesi ${AMORT.M_diz} kg olan cisim sabit
+kuvvetle durur) çıkarıldı; deliklerin kapandığı yer strokun %90'ı alındı. Bu değerler
+%30 değişince 2 m/s'lik düz iniş hâlâ metal durağa değmiyor
+(<code>03_amortisor_secimi.py</code>, duyarlılık).</li>
+<li><strong>Kuvvet oranı strok boyunca değişiyor</strong>: ${sayi(OLCU.MA_0, 3)}'ten
+${sayi(OLCU.MA_1, 3)}'e. Fizik bunu bacak geometrisinden çıkan bir polinomla
+(amortisör sıkışması = f(ayak yolu)) hesaba katıyor.</li>
+<li><strong>Zemine değen nokta düz bir çizgide hareket eder sayılır.</strong>
+Pabuç bacağa sabit ve tabanı kubbeli (R${OLCU.PAD_KUBBE_R}); zemine değen nokta
+kubbenin en alt noktası. Metal durağa gelindiğinde bu nokta
+${sayi(kin.temas_yukselme_mm, 1)} mm yükselir ve ${sayi(-kin.temas_kayma_mm, 0)} mm
+içeri kayar; fizik bu yolu ortalama eğimle (doğru çizgi) izliyor.</li>
+<li><strong>Aerodinamik sürükleme</strong> yalnızca rüzgâr sıfırdan büyükken
+hesaba katılır. Böylece varsayılan ayar doğrulanmış modelle birebir aynı kalır.</li>
+<li><strong>Bacak çerçevesinin ve üst plakanın zemin teması sonradan eklendi.</strong>
+<code>sim.py</code> yalnızca ayak ucunu ve gövdeyi (r = 138–141 mm) temas
+ettiriyordu; bacak kolları ile üst plakanın (r = 291 mm) hiç temas noktası yoktu
+ve roket devrilince bunlar zeminin içine giriyordu. Eklenen noktalar pabuç
+düzleminden en az 88 mm yukarıda, yani roket ayaktayken hiçbiri devreye girmez.
+Doğrulama koşuları bu eklemeyi kapatıp koşar, böylece sim.py ile birebir
+karşılaştırma bozulmaz.</li>
+<li><strong>Oransal valfte lüle çıkışı hesaba katılmıyor.</strong> İğne boğazı
+kıstığında akış artık lülenin kendi boğazında değil iğnede boğulur, lüle aşırı
+genleşmiş çalışır ve çıkış hızı bir miktar düşer. KTR'nin kendi denklemi gibi
+burada da itki, efektif boğaz alanıyla doğru orantılı kabul edildi.</li>
+<li><strong>Eğik bırakmada roket dönmeden bırakılıyor</strong> kabul edilir
+(açısal hız sıfır).</li>
+<li><strong>Devrildikten sonraki kuvvetler</strong> gövdenin zemine çarpmasından
+gelir ve <em>bacak tasarım yükü değildir</em>. Sonuç kartındaki kuvvetler bu
+yüzden yalnızca roket ayaktayken ölçülen değerlerdir.</li>
+<li><strong>Devrilme sonrası çözüm kaotiktir.</strong> Gövde yere çarpıp
+sektikten sonra en küçük sayısal fark bile büyüyerek farklı bir sonuç üretir.
+Aynı hesabı Python ve tarayıcı 1,6 saniye boyunca dokuz ondalık basamak aynı
+veriyor; ancak gövde çarptıktan sonra ayrılıyorlar. Yani "devrildi" sonucu
+güvenilirdir, devrilme sonrasındaki tek tek sayılar değildir.</li>
+</ul>
+<p>Amortisör gerçek bir ürün: <strong>${AMORT.URUN}</strong> (strok
+${Math.round(AMORT.S * 1000)} mm, darbe başına en çok 60 J, ${AMORT.KUTLE_G} g; yedeği
+${AMORT.YEDEK}). İki ucu pimli bir kartuşun içinde duruyor; kartuş açıkken
+${sayi(AMORT.L0, 0)} mm. Değerleri değiştirilemez: K = ${Math.round(AMORT.K)} N·s²/m²,
+poliüretan halka ${Math.round(AMORT.x_t * 1000)} mm'de devreye girer, metal durak
+${Math.round(AMORT.x_d * 1000)} mm'de. Bacak geometrisi de sabit: açılım ${OLCU.F_U} mm,
+metal durağa kadar ayak yolu ${OLCU.DUSEY_STROK} mm, gabari
+${Math.round(OLCU.GABARI)} mm (sınır 1200 mm).</p>`;
+
+  $('#dogrAciklama').innerHTML = `
+<p>Tarayıcıdaki fizik motoru (<code>fizik.js</code>), Python'daki doğrulanmış
+çözücünün (<code>hesaplar/sim.py</code>) satır satır karşılığıdır. Aynı
+denklemler, aynı katsayılar, aynı RK4 integrasyonu. Aşağıdaki test
+<em>şu anda tarayıcınızda</em> koşuyor ve sonuçları Python'ın verdiği sayılarla
+karşılaştırıyor.</p>
+<div class="dogr-ozet" id="dogrOzet">
+  <button class="calistir" id="dogrDug">Doğrulamayı çalıştır</button>
+  <span style="color:var(--metin3)">9 test · yaklaşık bir saniye</span>
+</div>
+<div class="sarili" id="dogrTablo"></div>
+<p style="margin-top:12px">İlk test <strong>statik denge</strong>: roket
+hareketsiz dururken üç bacağın zemine uyguladığı tepki kuvvetinin toplamı,
+roketin ağırlığına eşit olmalıdır. Bu, modelin kendi kendini denetlemesidir —
+kuvvetler doğru kurulmamışsa buradan anlaşılır. Duran roket poliüretan halkaya
+oturur (amortisör statik yük taşımaz). Diğer sekiz test, raporda kullanılan yük
+durumlarının aynısıdır.</p>`;
+  $('#dogrDug').addEventListener('click', dogrulamaKos);
+}
+
+function dogrulamaKos() {
+  const bagil = (a, b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-9) * 100;
+  const satirlar = [];
+  let enBuyuk = 0, gecti = 0, toplam = 0;
+
+  // --- statik denge ---
+  const st = REFERANS.statik;
+  const sr = kosu({ itki_yok: true, sabit_dt: st.dt, t_son: st.t_son, h0: st.h0,
+    v0: [0, 0, st.v0], kare_hz: 500 });
+  const N = sr.kayit.N[sr.kayit.N.length - 1];
+  const hs = bagil(N, st.tepki);
+  enBuyuk = Math.max(enBuyuk, hs); toplam++; if (hs < 0.05) gecti++;
+  satirlar.push(['Statik denge — 3 bacağın tepkisi',
+    sayi(N, 3) + ' N', sayi(st.tepki, 3) + ' N', hs, hs < 0.05]);
+
+  // --- yük durumları ---
+  for (const T0 of REFERANS.testler) {
+    const g = T0.g;
+    const r = kosu({ itki_yok: true, sabit_dt: REFERANS.dt, t_son: REFERANS.t_son,
+      h0: 0.004, v0: g.v0, vx: g.vx || 0, egim_deg: g.egim_deg || 0,
+      egim_yonu_deg: g.egim_yonu_deg || 0, kare_hz: 200 });
+    const o = r.ozet;
+    const h = Math.max(bagil(o.strok_max_mm, T0.s), bagil(o.Fa_max_N, T0.fa),
+      bagil(o.N_max_N, T0.n), bagil(o.ivme_max_g, T0.i));
+    enBuyuk = Math.max(enBuyuk, h); toplam++;
+    const ok = h < 0.5 && o.devrildi === T0.d;
+    if (ok) gecti++;
+    satirlar.push([T0.ad,
+      Math.round(o.N_max_N) + ' N · ' + sayi(o.strok_max_mm, 1) + ' mm',
+      Math.round(T0.n) + ' N · ' + sayi(T0.s, 1) + ' mm', h, ok]);
+  }
+
+  $('#dogrOzet').innerHTML =
+    `<span class="buyuk" style="color:var(--${gecti === toplam ? 'iyi' : 'kritik'})">` +
+    `${gecti} / ${toplam} test geçti</span>` +
+    `<span style="color:var(--metin2)">en büyük sapma ` +
+    `<strong>%${enBuyuk < 0.0005 ? '0,000' : sayi(enBuyuk, 4)}</strong></span>` +
+    `<button class="calistir" id="dogrDug2">Yeniden çalıştır</button>`;
+  $('#dogrDug2').addEventListener('click', dogrulamaKos);
+  $('#dogrTablo').innerHTML = '<table class="veri"><thead><tr>' +
+    '<th>Test</th><th>Tarayıcı (fizik.js)</th><th>Python (sim.py)</th>' +
+    '<th>Sapma</th><th></th></tr></thead><tbody>' +
+    satirlar.map(([a, b, c, h, ok]) =>
+      `<tr><td>${a}</td><td>${b}</td><td>${c}</td>` +
+      `<td>%${h < 0.0005 ? '0,000' : sayi(h, 4)}</td>` +
+      `<td class="${ok ? 'ok' : 'yok'}">${ok ? '✓' : '✕'}</td></tr>`).join('') +
+    '</tbody></table>';
+  return { gecti, toplam, enBuyuk };
+}
+
+/** Sayfa açılırken küçük bir denetim: başlıktaki rozeti doldurur. */
+function hizliDenetim() {
+  const bagil = (a, b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-9) * 100;
+  const st = REFERANS.statik;
+  const sr = kosu({ itki_yok: true, sabit_dt: st.dt, t_son: st.t_son, h0: st.h0,
+    v0: [0, 0, st.v0], kare_hz: 500 });
+  const h1 = bagil(sr.kayit.N[sr.kayit.N.length - 1], st.tepki);
+  const T2 = REFERANS.testler[1];
+  const r2 = kosu({ itki_yok: true, sabit_dt: REFERANS.dt, t_son: REFERANS.t_son,
+    h0: 0.004, v0: T2.g.v0, egim_deg: 0, kare_hz: 200 });
+  const h2 = Math.max(bagil(r2.ozet.N_max_N, T2.n), bagil(r2.ozet.Fa_max_N, T2.fa));
+  const en = Math.max(h1, h2);
+  const kin = kinematikDenetimi();
+  const r = $('#rozetDogr');
+  r.textContent = en < 0.01
+    ? `sim.py ile sapma %${en < 0.0005 ? '0,000' : sayi(en, 4)}`
+    : `sapma %${sayi(en, 3)}`;
+  r.style.color = en < 0.01 ? 'var(--iyi)' : 'var(--kritik)';
+  r.title = `Statik denge hatası %${sayi(h1, 4)} · yük durumu hatası ` +
+    `%${sayi(h2, 4)} · kinematik MA ${sayi(kin.MA_0, 4)}`;
+}
+
+// =========================================================================
+//  ÇİZİM DÖNGÜSÜ
+// =========================================================================
+let sonKare = performance.now();
+function dongu() {
+  requestAnimationFrame(dongu);
+  const simdi = performance.now();
+  const dtg = Math.min(0.05, (simdi - sonKare) / 1000);
+  sonKare = simdi;
+  if (!S) return;
+  const son = S.kayit.t[S.kayit.t.length - 1] || 1;
+  if (oynuyor) {
+    tSim += dtg * hiz;
+    if (tSim >= son) { tSim = son; oynuyor = false; $('#oynDug').textContent = '▶'; }
+    zamanKayGuncelle();
+  }
+  const k = kareBul(tSim);
+  if (k) {
+    roketiYerlestir(k);
+    kamerayiYerlestir(k);
+    hudGuncelle(k);
+    grafikleriCiz(tSim);
+    teknikCiz(k);
+  }
+  renderer.render(sahne, kamera);
+}
+
+// =========================================================================
+//  BAŞLAT
+// =========================================================================
+function basla() {
+  if (!window.THREE) {
+    $('#sahne').innerHTML = '<p style="padding:20px;color:var(--kritik)">' +
+      '3B kütüphanesi (three.js) yüklenemedi. Sayfayı yenilemeyi deneyin.</p>';
+    return;
+  }
+  sahneKur();
+  hudKur();
+  grafikleriKur();
+  teknikKur();
+  kumandalariKur();
+  senaryolariKur();
+  oynaticiKur();
+  aciklamalariYaz();
+  ogeYenile.forEach((f) => f());
+  kos();
+  senaryoIsaretle(0);
+  dongu();
+  setTimeout(hizliDenetim, 220);
+
+  $('#sifirlaDug').addEventListener('click', () => {
+    P = Object.assign({}, BASLANGIC);
+    ogeYenile.forEach((f) => f());
+    kos(); senaryoIsaretle(0);
+  });
+
+  new ResizeObserver(() => { boyutla(); grafikleriYenile(tSim); }).observe(sahneKutu);
+  new ResizeObserver(() => grafikleriYenile(tSim)).observe($('#grafikler'));
+  window.addEventListener('resize', () => { boyutla(); grafikleriYenile(tSim); });
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener('change', () => { temaUygula(); grafikleriYenile(tSim); });
+  new MutationObserver(() => { temaUygula(); grafikleriYenile(tSim); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.__zenithYuklendi = true;          // güvenlik ağını iptal et
+}
+
+try {
+  basla();
+} catch (e) {
+  $('#sahne').innerHTML = '<p style="padding:20px;color:var(--kritik)">Hata: ' +
+    (e && e.message ? e.message : e) + '</p>';
+  console.error(e);
+}
+</script>
