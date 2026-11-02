@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { kosu, ItkiSistemi, G } from './fizik.js';
 import { kinematikDenetimi, OLCU } from './geometri.js';
+import { GERILME, kontrolDegeri, parcaDurumu, TASARIM_SINIRI } from './gerilme.js';
 
 const BURASI = dirname(fileURLToPath(import.meta.url));
 const REF = JSON.parse(readFileSync(join(BURASI, 'referans.json'), 'utf8'));
@@ -280,7 +281,87 @@ console.log(`   serbest dususte toplam enerji  ${E0.toFixed(4)} J -> ` +
   (e_ok ? yesil('TAMAM') : kirmizi('HATA')));
 rapor.enerji = { E0, E1, hata: e_hata };
 
-// ----------------------------------------------------------------- 6) SONUC
+// ------------------------------------------------------- 6) ANLIK GERILME VERISI
+// gerilme_veri.js, hesaplar/18_simulator_gerilme.py'nin el hesaplari (07) ve
+// sonlu eleman (08) sonuclarindan urettigi kopyadir. Hesaplar yeniden kosulup
+// 18 kosulmazsa simulasyon eski gerilmeleri gosterirdi; burada yakalanir.
+console.log('\n' + kalin('6) ANLIK GERILME VERISI  (gerilme_veri.js <-> hesaplar/*.json)'));
+rapor.gerilme = { eslesme: {}, inisler: {} };
+const EL_YOL = join(BURASI, '..', 'hesaplar', 'el_hesaplari.json');
+const FEA_YOL = join(BURASI, '..', 'hesaplar', 'fea_sonuclari.json');
+const TY_YOL = join(BURASI, '..', 'hesaplar', 'tasarim_yukleri.json');
+const gerilme_once = hata_sayisi;
+const gerilmeHata = (mesaj) => {
+  hata_sayisi++;
+  console.log('   ' + kirmizi('ESKI KALMIS  ') + mesaj);
+};
+if (existsSync(EL_YOL) && existsSync(FEA_YOL) && existsSync(TY_YOL)) {
+  const EL = JSON.parse(readFileSync(EL_YOL, 'utf8'));
+  const FEA = JSON.parse(readFileSync(FEA_YOL, 'utf8'));
+  const TY = JSON.parse(readFileSync(TY_YOL, 'utf8'));
+  const ayni = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(b));
+  // a) referans yukler
+  for (const [k, b] of [['N', TY.N_nihai], ['Fa', TY.Fa_nihai], ['Y', TY.yanal_nihai]]) {
+    if (!ayni(GERILME.ref[k], b)) gerilmeHata(`nihai yuk ${k}: ${GERILME.ref[k]} (beklenen ${b})`);
+  }
+  // b) her el hesabi kontrolu: deger, akma siniri ve kuvvet paylari ayni mi
+  const el_k = GERILME.kontroller.filter((k) => k.kaynak === 'el');
+  let el_say = 0;
+  for (const s of EL) {
+    if (!s.canli) continue;
+    el_say++;
+    const k = el_k.find((x) => x.kaynak_ad === s.ad);
+    if (!k) { gerilmeHata(`el hesabi '${s.ad}' gerilme_veri.js'te yok`); continue; }
+    const pay = Object.assign({}, s.canli.yuk); const sabit = pay.sabit || 0; delete pay.sabit;
+    const tamam = ayni(k.nihai, s.gerilme) && ayni(k.akma, s.canli.akma) && ayni(k.sabit, sabit)
+      && k.us === s.canli.us && Object.keys(pay).length === Object.keys(k.pay).length
+      && Object.keys(pay).every((x) => k.pay[x] !== undefined && ayni(k.pay[x], pay[x]));
+    if (!tamam) gerilmeHata(`el hesabi '${s.ad}': ${k.nihai} (hesapta ${s.gerilme})`);
+  }
+  if (el_k.length !== el_say) gerilmeHata(`el hesabi sayisi ${el_k.length} (hesapta ${el_say})`);
+  // c) sonlu eleman: her parcanin en buyuk nihai gerilmesi
+  const fea_k = GERILME.kontroller.filter((k) => k.kaynak === 'fea');
+  const fea_kod = [...new Set(FEA.map((s) => s.parca.split(' ')[0]))];
+  for (const kod of fea_kod) {
+    const vm = Math.max(...FEA.filter((s) => s.parca.startsWith(kod + ' ')
+      && s.durum.startsWith('NIHAI')).map((s) => s.vm));
+    const k = fea_k.find((x) => x.kaynak_ad.startsWith(kod + ' '));
+    if (!k || !ayni(k.nihai, vm)) gerilmeHata(`sonlu eleman ${kod}: ${k ? k.nihai : 'yok'} (hesapta ${vm})`);
+  }
+  if (fea_k.length !== fea_kod.length) gerilmeHata(`sonlu eleman parca sayisi ${fea_k.length} (hesapta ${fea_kod.length})`);
+  // d) nihai yukte olcekleme kontrolun kendi degerini vermeli
+  let oz_hata = 0;
+  for (const k of GERILME.kontroller) {
+    oz_hata = Math.max(oz_hata, bagil(kontrolDegeri(k, GERILME.ref), k.nihai));
+  }
+  if (oz_hata > 1e-9) gerilmeHata(`nihai yukte olcekleme kontrolun degerini vermiyor (%${oz_hata})`);
+  const ok = hata_sayisi === gerilme_once;
+  console.log(`   ${el_say} el hesabi + ${fea_kod.length} sonlu eleman kontrolu, nihai yukte ` +
+    `olcekleme hatasi %${oz_hata.toExponential(1)}  ` + (ok ? yesil('TAMAM') : ''));
+  rapor.gerilme.eslesme = { el: el_say, fea: fea_kod.length, oz_hata };
+} else {
+  console.log('   hesaplar/*.json bulunamadi - eslesme atlandi (yayindaki kopyada normal)');
+}
+// e) tasarim olcutu: 2 m/s'lik inislerde hicbir parca akmanin 2/3'unu (emniyet 1,5)
+//    gecmemeli; 3 m/s'de akmamali. Yukler: inis boyunca bacaklarin en buyuk kuvvetleri.
+console.log('   inis                              en zorlanan parca               akmanin %');
+for (const [ad, sinir] of [['T5', TASARIM_SINIRI], ['T8', TASARIM_SINIRI], ['T6', 1.0], ['T3', 1.0]]) {
+  const T = REF.testler.find((x) => x.ad.startsWith(ad + ' '));
+  const g = T.girdi;
+  const r = kosu({ itki_yok: true, sabit_dt: REF.dt, t_son: REF.t_son, h0: 0.004,
+    v0: g.v0 || [0, 0, 0], vx: g.vx !== undefined ? g.vx : 0, egim_deg: g.egim_deg || 0,
+    egim_yonu_deg: g.egim_yonu_deg || 0, kare_hz: 200 });
+  const pd = parcaDurumu({ N: r.ozet.N_ayakta_N, Fa: r.ozet.Fa_ayakta_N, Y: r.ozet.Ft_ayakta_N });
+  const en = GERILME.parcalar.map((p) => [p, pd[p.kod]]).sort((a, b) => b[1].u - a[1].u)[0];
+  const ok = en[1].u < sinir;
+  if (!ok) hata_sayisi++;
+  console.log(`   ${T.ad.padEnd(34)} ${(en[0].ad + ' (' + en[1].k.ad + ')').slice(0, 30).padEnd(31)} ` +
+    `${(en[1].u * 100).toFixed(1).padStart(6)}  (sinir ${Math.round(sinir * 100)})  ` +
+    (ok ? yesil('TAMAM') : kirmizi('ASILDI')));
+  rapor.gerilme.inisler[T.ad] = { parca: en[0].ad, kontrol: en[1].k.ad, u: en[1].u, sinir };
+}
+
+// ----------------------------------------------------------------- 7) SONUC
 console.log('\n' + '='.repeat(78));
 if (hata_sayisi === 0) {
   console.log(kalin(yesil('  SONUC: TUM TESTLER GECTI')) +

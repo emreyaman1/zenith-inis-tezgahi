@@ -387,6 +387,58 @@ button.calistir{padding:8px 14px; border-radius:7px; cursor:pointer; font-size:1
   font-family:var(--f-gov)}
 .dip{color:var(--metin3); font-size:12px; margin-top:14px; text-align:center}
 
+/* ---------------------------------------------- anlık gerilme paneli */
+.gerilme{background:var(--yuzey); border:1px solid var(--cizgi); border-radius:9px;
+  box-shadow:var(--golge); padding:9px 11px 10px}
+.gerilme h3{font-size:11.5px; letter-spacing:.075em; text-transform:uppercase;
+  color:var(--metin2)}
+.ger-acik{font-family:var(--f-say); font-size:11px; padding:4px 9px; cursor:pointer;
+  border-radius:6px; background:var(--yuzey2); color:var(--metin2);
+  border:1px solid var(--cizgi)}
+.ger-acik[aria-pressed="true"]{background:var(--vurgu); color:#fff; border-color:var(--vurgu)}
+.ger-ozet{font-size:13px; color:var(--metin2); margin:3px 0 9px}
+.ger-ozet strong{color:var(--metin)}
+.ger-satir, .ger-olcek{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(120px,2fr) 104px;
+  gap:0 12px; align-items:center}
+.ger-satir{padding:3px 0; border-top:1px solid var(--cizgi)}
+.ger-satir:first-child{border-top:none}
+.ger-ad{min-width:0; font-size:12.5px; line-height:1.25}
+.ger-ad small{display:block; color:var(--metin3); font-size:11px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.ger-cubuk{position:relative; height:14px; border-radius:4px; background:var(--yuzey3)}
+.ger-dolu{position:absolute; left:0; top:0; bottom:0; width:0; border-radius:4px}
+.ger-cizgi{position:absolute; top:-2px; bottom:-2px; width:1px; background:var(--metin3)}
+.ger-zirve{position:absolute; top:-3px; bottom:-3px; width:3px; margin-left:-1.5px;
+  background:var(--metin); border-radius:1px}
+.ger-deger{font-family:var(--f-say); font-size:12.5px; font-weight:600; text-align:right;
+  white-space:nowrap; font-variant-numeric:tabular-nums}
+.ger-deger small{display:block; font-weight:400; color:var(--metin3); font-size:10.5px}
+.ger-olcek{margin-top:8px; font-family:var(--f-say); font-size:10.5px; color:var(--metin3)}
+.ger-olcek .serit{height:8px; border-radius:3px}
+.ger-olcek .etik{grid-column:2; position:relative; height:15px}
+.ger-olcek .etik span{position:absolute; top:2px; transform:translateX(-50%); white-space:nowrap}
+.ger-olcek .etik span:first-child{transform:none}
+.ger-not{font-size:12px; color:var(--metin3); margin:6px 0 0}
+.ger-gecersiz .ger-dolu{opacity:.2}
+.ger-3b{position:absolute; left:10px; bottom:10px; pointer-events:none; width:190px;
+  background:color-mix(in srgb, var(--yuzey) 86%, transparent); border:1px solid var(--cizgi);
+  border-radius:7px; padding:6px 9px 4px; backdrop-filter:blur(7px);
+  font-family:var(--f-say); font-size:10px; color:var(--metin2)}
+.ger-3b b{display:block; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  margin-bottom:4px}
+.ger-3b .serit{height:7px; border-radius:3px}
+.ger-3b .etik{position:relative; height:13px; margin-top:2px}
+.ger-3b .etik span{position:absolute; transform:translateX(-50%); white-space:nowrap}
+.ger-3b .etik span:first-child{transform:none}
+@media (max-width:620px){
+  .ger-satir{grid-template-columns:minmax(0,1fr) auto; row-gap:3px}
+  .ger-cubuk{grid-column:1 / -1; grid-row:2}
+  .ger-olcek{grid-template-columns:minmax(0,1fr)}
+  .ger-olcek>span:first-child, .ger-olcek>span:nth-child(3){display:none}
+  .ger-olcek .etik{grid-column:1}
+  .ger-3b{display:none}
+}
+
 @media (max-width:1040px){
   .govde{grid-template-columns:1fr}
   .sag{order:2}
@@ -430,6 +482,7 @@ button.calistir{padding:8px 14px; border-radius:7px; cursor:pointer; font-size:1
         </div>
         <div class="kam-dug" id="kamDug"></div>
         <div class="sahne-ipucu">sürükle: döndür · tekerlek: yakınlaş</div>
+        <div class="ger-3b" id="ger3b" hidden></div>
       </div>
 
       <div class="sonuc" id="sonucKart"></div>
@@ -443,6 +496,20 @@ button.calistir{padding:8px 14px; border-radius:7px; cursor:pointer; font-size:1
           <canvas id="teknikTuval"></canvas>
           <dl class="teknik-degerler" id="teknikDegerler"></dl>
         </div>
+      </div>
+
+      <div class="gerilme">
+        <div class="teknik-bas">
+          <h3 id="gerBaslik">İniş takımı — anlık gerilme</h3>
+          <button type="button" class="ger-acik" id="gerAcik" aria-pressed="true">Modeli renklendir</button>
+        </div>
+        <p class="ger-ozet" id="gerOzet"></p>
+        <div id="gerListe"></div>
+        <div class="ger-olcek" id="gerOlcek"></div>
+        <p class="ger-not">Çubuk, parçanın o anki gerilmesinin akma sınırına oranıdır: akmada
+          parça kalıcı eğilir. Siyah çentik, bu inişin tamamındaki en yüksek değerdir. Bacak,
+          üstteki kesitte seçilen bacaktır. Nasıl hesaplandığı aşağıda, “Gerilme renkleri”
+          bölümünde.</p>
       </div>
 
       <div class="oynatici">
@@ -465,6 +532,10 @@ button.calistir{padding:8px 14px; border-radius:7px; cursor:pointer; font-size:1
         <details class="kutu">
           <summary>Bu amortisör neden yay gibi roketi taşımıyor? Duran roket neye oturuyor?</summary>
           <div class="icerik" id="sekmeAciklama"></div>
+        </details>
+        <details class="kutu">
+          <summary>Gerilme renkleri nasıl hesaplanıyor? Ne kadar güvenilir?</summary>
+          <div class="icerik" id="gerAciklama"></div>
         </details>
         <details class="kutu">
           <summary>Roketin ölçüleri nereden geldi?</summary>
@@ -527,6 +598,7 @@ setTimeout(function () {
 import { kosu, ItkiSistemi } from './fizik.js';
 import { OLCU, KTR, AMORT, bacakAcisi, bacakNoktalari, amortisorBoyu, kinematikDenetimi,
   luleKesiti, donustur, pabucProfili, kuvvetOrani } from './geometri.js';
+import { GERILME, parcaDurumu, rampa, rampaCss, RAMPA, TASARIM_SINIRI } from './gerilme.js';
 
 const $ = (s) => document.querySelector(s);
 const sayi = (v, n = 2) => v.toLocaleString('tr-TR',
@@ -793,6 +865,10 @@ function silindir(r1, r2, h, mal, seg = 20) {
 function bacakKur(i, az) {
   const kok = new T.Group();
   kok.rotation.z = az;
+  // gerilme renklendirmesi: hangi görsel parça hangi gerilme grubuna ait
+  // (kodlar gerilme_veri.js'teki parça kodları; birden çoksa en zorlanan)
+  const ger = [];
+  const gerEkle = (mesh, ...kodlar) => { ger.push({ mesh, kodlar, asil: mesh.material }); return mesh; };
   // D mafsalı: dönme ekseni tegetsel (yerel y)
   const pivot = new T.Group();
   pivot.position.set(mm(OLCU.D_U), 0, zc(OLCU.D_Z));
@@ -813,28 +889,28 @@ function bacakKur(i, az) {
       kolM.position.set((a[0] + b[0]) / 2, yp, (a[1] + b[1]) / 2);
       kolM.rotation.y = -Math.atan2(b[1] - a[1], b[0] - a[0]);
       kolM.castShadow = true;
-      pivot.add(kolM);
+      pivot.add(gerEkle(kolM, 'P01'));
     }
     for (const [u, w, r] of gozler) {
       const gozM = new T.Mesh(new T.CylinderGeometry(mm(r), mm(r), plT, 24), M.alu);
       gozM.position.set(u, yp, w);
       gozM.castShadow = true;
-      pivot.add(gozM);
+      pivot.add(gerEkle(gozM, 'P01'));
     }
   }
 
   // --- enine bağlantı boruları (C ve F köşelerini birbirine bağlar) ---
-  for (const [u, w] of [[uC, wC], [uF, wF]]) {
+  for (const [u, w, kod] of [[uC, wC, 'P02'], [uF, wF, 'P03']]) {
     const b = new T.Mesh(
       new T.CylinderGeometry(mm(OLCU.ENINE_OD) / 2, mm(OLCU.ENINE_OD) / 2, 0.082, 16),
       M.alu2);
     b.position.set(u, 0, w);
     b.castShadow = true;
-    pivot.add(b);
+    pivot.add(gerEkle(b, kod));
   }
   // --- D pimi ---
   const pim = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.1, 14), M.celik);
-  pivot.add(pim);
+  pivot.add(gerEkle(pim, 'P07'));
 
   // --- ayak: sap (P03) + pabuç (P04). Pabuç bacağa SABİT, bacakla birlikte
   //     döner; tabanı R200 kubbe olduğu için zeminde yuvarlanır ---
@@ -842,14 +918,14 @@ function bacakKur(i, az) {
   const sap = new T.Mesh(new T.BoxGeometry(mm(OLCU.SAP_U), mm(OLCU.SAP_Y), sapL), M.alu2);
   sap.position.set(uF, 0, wF - sapL / 2);
   sap.castShadow = true;
-  pivot.add(sap);
+  pivot.add(gerEkle(sap, 'P03'));
   const pabucG = new T.LatheGeometry(
     pabucProfili(14).map(([r, h]) => new T.Vector2(mm(r), mm(h))), 40);
   pabucG.rotateX(Math.PI / 2);                // dönel eksen Y -> Z (yukarı)
   const pabuc = new T.Mesh(pabucG, M.pom);
   pabuc.position.set(uF, 0, wF - mm(OLCU.AYAK_PIM_OFS));   // taban ortası
   pabuc.castShadow = true;
-  pivot.add(pabuc);
+  pivot.add(gerEkle(pabuc, 'P04'));
 
   // --- amortisör kartuşu: kovan (P11) A'da gövdeye, itici (P12) C'de bacağa bağlı;
   //     içinde Airtac ACA2020-2 (görünmez). Her karede yeniden yönlendirilir.
@@ -868,27 +944,29 @@ function bacakKur(i, az) {
     const m = new T.Mesh(g, mal); m.castShadow = true; amort.add(m);
     return m;
   };
-  goz(AMORT.GOZ_R_A, M.kartus);                                // kovan gözü (A)
-  eksende(AMORT.KOVAN_ARKA_R, AMORT.KOVAN_ARKA_R, 12, AMORT.KOVAN_DIS_SON, M.kartus);  // dişli arka bölüm
-  eksende(AMORT.KOVAN_ON_R, AMORT.KOVAN_ON_R, AMORT.KOVAN_DIS_SON, AMORT.KOVAN_ON_SON,
-    M.kartus);                                                 // ön bölüm (itici kafası içinde)
+  // kovan gözünde küresel yatak ve A cıvatası da var: ikisinden zorlananın rengi
+  gerEkle(goz(AMORT.GOZ_R_A, M.kartus), 'P11', 'A');           // kovan gözü (A)
+  gerEkle(eksende(AMORT.KOVAN_ARKA_R, AMORT.KOVAN_ARKA_R, 12, AMORT.KOVAN_DIS_SON, M.kartus),
+    'P11');                                                    // dişli arka bölüm
+  gerEkle(eksende(AMORT.KOVAN_ON_R, AMORT.KOVAN_ON_R, AMORT.KOVAN_DIS_SON, AMORT.KOVAN_ON_SON,
+    M.kartus), 'P11');                                         // ön bölüm (itici kafası içinde)
   // C ile birlikte hareket edenler: itici mili ve itici gözü
   const mil = new T.Mesh(new T.CylinderGeometry(mm(AMORT.ITICI_MIL_R), mm(AMORT.ITICI_MIL_R),
     1, 14), M.celik);
-  mil.castShadow = true; amort.add(mil);
-  const altGoz = goz(AMORT.GOZ_R_C, M.alu2);
+  mil.castShadow = true; amort.add(gerEkle(mil, 'P12'));
+  const altGoz = gerEkle(goz(AMORT.GOZ_R_C, M.alu2), 'P12');
   // --- üst braket (kartuşu karbon boruya bağlayan kelepçe) ---
   const kel = new T.Mesh(new T.BoxGeometry(0.052, 0.088, 0.03), M.alu);
   kel.position.set(mm(OLCU.A_U) - 0.016, 0, zc(OLCU.A_Z));
-  kel.castShadow = true; kok.add(kel);
+  kel.castShadow = true; kok.add(gerEkle(kel, 'P06'));
   const kol = silindir(0.012, 0.012, mm(OLCU.A_U - OLCU.BORU_R) - 0.01, M.alu, 12);
   kol.rotation.y = Math.PI / 2;
   kol.position.set((mm(OLCU.A_U) + mm(OLCU.BORU_R)) / 2, 0, zc(OLCU.A_Z));
-  kok.add(kol);
+  kok.add(gerEkle(kol, 'P06'));
   // --- alt braket (D pimini taşıyan parça) ---
   const altB = new T.Mesh(new T.BoxGeometry(0.075, 0.1, 0.034), M.alu);
   altB.position.set(mm(OLCU.D_U) - 0.028, 0, zc(OLCU.D_Z) + 0.004);
-  altB.castShadow = true; kok.add(altB);
+  altB.castShadow = true; kok.add(gerEkle(altB, 'P05'));
 
   // --- zemin teması halkası (ayak değdiğinde görünür) ---
   const hg = new T.RingGeometry(0.055, 0.075, 36);
@@ -900,7 +978,7 @@ function bacakKur(i, az) {
   sahne.add(halka);
   temasHalkalari.push({ mesh: halka, mal: hm });
 
-  bacaklar.push({ kok, pivot, pabuc, amort, mil, altGoz, az, i });
+  bacaklar.push({ kok, pivot, pabuc, amort, mil, altGoz, az, i, ger, gerMal: new Map() });
   return kok;
 }
 
@@ -1244,11 +1322,184 @@ function kos() {
   izAdet = j; izAtla = atla;
   void n;
 
+  gerilmeHesapla();
   tSim = 0; oynuyor = true; kamAtla = true;
   $('#oynDug').textContent = '❚❚';
-  sonucCiz(); grafikleriYenile(0); zamanKayGuncelle();
+  sonucCiz(); gerilmeOzetYaz(); grafikleriYenile(0); zamanKayGuncelle();
 }
 let izAdet = 0, izAtla = 1;
+
+// =========================================================================
+//  ANLIK GERİLME  (gerilme.js: el hesabı + sonlu eleman, o anki kuvvetle ölçeklenir)
+// =========================================================================
+let gerilmeAcik = true;
+/**
+ * Her kare ve her bacak için parçaların akmaya oranı: K.ger[f][i][kod] = {u, k, deger}.
+ * Roket devrildikten sonra null: o kuvvetler gövdenin zemine çarpmasından gelir,
+ * el hesaplarının yük yolu artık geçerli değildir.
+ */
+function gerilmeHesapla() {
+  const K = S.kayit, o = S.ozet, n = K.t.length;
+  const t_dev = o.devrildi && o.t_devrildi >= 0 ? o.t_devrildi : Infinity;
+  const bos = parcaDurumu({ N: 0, Fa: 0, Y: 0 });      // havadaki karelerin hepsi aynı
+  K.ger = new Array(n); K.gerEnb = new Array(n);
+  for (let f = 0; f < n; f++) {
+    if (K.t[f] >= t_dev) { K.ger[f] = null; K.gerEnb[f] = null; continue; }
+    const kare = [0, 1, 2].map((i) => (K.Nb[f][i] > 0 || K.Fa[f][i] > 0 || K.Ftb[f][i] > 0)
+      ? parcaDurumu({ N: K.Nb[f][i], Fa: K.Fa[f][i], Y: K.Ftb[f][i] }) : bos);
+    K.ger[f] = kare;
+    K.gerEnb[f] = kare.map((pd) => Math.max(...GERILME.parcalar.map((p) => pd[p.kod].u)));
+  }
+  // inişin tamamı: fizik bütün adımlarda (karelerden sık) bacakların en büyük
+  // kuvvetlerini tutuyor; onlarla bulunan değer bir üst sınırdır
+  const havada = o.devrildi && o.egim_temas_deg > 55;
+  S.gerZirve = o.temas_var && !havada
+    ? parcaDurumu({ N: o.N_ayakta_N, Fa: o.Fa_ayakta_N, Y: o.Ft_ayakta_N }) : null;
+}
+function enZorlanan(pd) {
+  let en = null;
+  for (const p of GERILME.parcalar) if (!en || pd[p.kod].u > en.s.u) en = { p, s: pd[p.kod] };
+  return en;
+}
+const yuzde = (u) => '%' + (u * 100 < 9.95 ? sayi(u * 100, 1) : Math.round(u * 100));
+function birimi(k) {
+  return /\(kN\)$/.test(k.ad) ? 'kN' : (/\(N\)$/.test(k.ad) ? 'N' : 'MPa');
+}
+function degerYaz(k, d) {
+  const b = birimi(k);
+  const f = (v) => b === 'MPa' ? sayi(v, v < 10 ? 1 : 0) : (b === 'kN' ? sayi(v, 1) : Math.round(v));
+  return `${f(d)} / ${f(k.akma)} ${b}`;
+}
+const gerOlcekKonum = (u) => Math.max(0, Math.min(1.25, u)) / 1.25 * 100;
+function gerOlcekHtml(kisa) {
+  const durak = RAMPA.map(([u, h]) => `${h} ${gerOlcekKonum(u).toFixed(1)}%`).join(',');
+  return { serit: `<div class="serit" style="background:linear-gradient(90deg,${durak})"></div>`,
+    etik: `<div class="etik"><span style="left:0">0</span>` +
+      `<span style="left:${gerOlcekKonum(TASARIM_SINIRI)}%">${kisa ? '%67' : '%67 tasarım sınırı'}</span>` +
+      `<span style="left:${gerOlcekKonum(1)}%">akma</span></div>` };
+}
+
+function gerilmeKur() {
+  const liste = $('#gerListe');
+  liste.innerHTML = GERILME.parcalar.map((p) => `
+    <div class="ger-satir" data-kod="${p.kod}">
+      <div class="ger-ad">${p.ad}<small>${p.icerik}</small></div>
+      <div class="ger-cubuk"><div class="ger-dolu"></div>
+        <div class="ger-cizgi" style="left:${gerOlcekKonum(TASARIM_SINIRI)}%"></div>
+        <div class="ger-cizgi" style="left:${gerOlcekKonum(1)}%"></div>
+        <div class="ger-zirve" hidden></div></div>
+      <div class="ger-deger">—<small></small></div>
+    </div>`).join('');
+  liste._satir = {};
+  for (const el of liste.querySelectorAll('.ger-satir')) {
+    liste._satir[el.dataset.kod] = { el, dolu: el.querySelector('.ger-dolu'),
+      zirve: el.querySelector('.ger-zirve'), deger: el.querySelector('.ger-deger'),
+      alt: el.querySelector('.ger-ad small') };
+  }
+  const o = gerOlcekHtml();
+  $('#gerOlcek').innerHTML = `<span></span>${o.serit}<span></span>${o.etik}`;
+  const o3 = gerOlcekHtml(true);
+  $('#ger3b').innerHTML = `<b>Gerilme / akma sınırı</b>${o3.serit}${o3.etik}`;
+  const acik = (v) => {
+    gerilmeAcik = v;
+    for (const b of document.querySelectorAll('[data-gerilme-dug]'))
+      b.setAttribute('aria-pressed', String(v));
+    $('#ger3b').hidden = !v;
+  };
+  $('#gerAcik').dataset.gerilmeDug = '1';
+  $('#gerAcik').addEventListener('click', () => acik(!gerilmeAcik));
+  const kd = document.createElement('button');
+  kd.type = 'button'; kd.textContent = 'Gerilme'; kd.dataset.gerilmeDug = '1';
+  kd.title = 'Bacak parçalarını anlık gerilmeye göre renklendir';
+  kd.addEventListener('click', () => acik(!gerilmeAcik));
+  $('#kamDug').appendChild(kd);
+  acik(gerilmeAcik);
+}
+
+function gerilmeOzetYaz() {
+  const z = S.gerZirve, o = S.ozet;
+  let m;
+  if (!z) {
+    m = o.temas_var ? 'Roket zemine değmeden devrildi; bacaklarda yük oluşmadı.'
+      : 'Roket zemine değmedi; bacaklarda yük yok.';
+  } else {
+    const en = enZorlanan(z);
+    const sinir = en.s.u >= 1 ? 'akma sınırını <strong>aştı</strong> — parça kalıcı eğilir' +
+      ` (%100'ün üstündeki sayılar yalnızca sınırın ne kadar aşıldığını gösterir)`
+      : (en.s.u > TASARIM_SINIRI ? 'tasarım sınırının (%67) üstünde, akmanın altında'
+        : 'tasarım sınırının (%67) altında');
+    m = `Bu inişte en çok zorlanan: <strong>${en.p.ad}</strong> — ` +
+      `${en.s.k.ad.replace(/ \((k?N)\)$/, '').toLocaleLowerCase('tr-TR')}, akmaya oranı ` +
+      `<strong>${yuzde(en.s.u)}</strong> — ${sinir}.`;
+    if (o.devrildi) m += ' Roket devrildi; devrildikten sonraki an gösterilmez.';
+  }
+  $('#gerOzet').innerHTML = m;
+}
+
+/** Seçili bacak: 'yuk' ise o an en çok ezilen bacak. */
+function seciliBacak(k) {
+  if (bacakSecim !== 'yuk') return bacakSecim;
+  let i = 0;
+  for (let j = 1; j < 3; j++) if (k.s[j] > k.s[i]) i = j;
+  return i;
+}
+
+function gerilmePanel(k) {
+  const K = S.kayit, f = kareIndeks(k.t), i = seciliBacak(k);
+  const kare = K.ger ? K.ger[f] : undefined;
+  const liste = $('#gerListe');
+  $('#gerBaslik').textContent = `İniş takımı — anlık gerilme · bacak ${i + 1}`;
+  for (const p of GERILME.parcalar) {
+    const r = liste._satir[p.kod];
+    const z = S.gerZirve && S.gerZirve[p.kod];
+    r.zirve.hidden = !z;
+    if (z) r.zirve.style.left = gerOlcekKonum(z.u) + '%';
+    if (kare === null) {                  // devrildi
+      r.el.classList.add('ger-gecersiz');
+      r.deger.firstChild.textContent = '—';
+      r.alt.textContent = 'devrildi: hesap dışı';
+      continue;
+    }
+    r.el.classList.remove('ger-gecersiz');
+    const s = kare ? kare[i][p.kod] : null;
+    if (!s) continue;
+    r.dolu.style.width = gerOlcekKonum(s.u) + '%';
+    r.dolu.style.background = rampaCss(s.u);
+    r.deger.firstChild.textContent = yuzde(s.u);
+    r.deger.lastChild.textContent = degerYaz(s.k, s.deger);
+    r.alt.textContent = s.u > 0.0005 ? s.k.ad.replace(/ \((k?N)\)$/, '') : p.icerik;
+    r.el.title = `${p.ad} (${p.icerik}) — en zorlanan kontrol: ${s.k.ad}` +
+      (s.k.kaynak === 'fea' ? ' (sonlu eleman)' : ' (el hesabı)');
+  }
+}
+
+/** 3B modeldeki bacak parçalarını o anki gerilmeye göre boyar (kapalıyken asıl malzeme). */
+function gerilme3B(k) {
+  const K = S.kayit, f = kareIndeks(k.t);
+  const kare = K.ger ? K.ger[f] : undefined;
+  for (const b of bacaklar) {
+    for (const g of b.ger) {
+      if (!gerilmeAcik) { if (g.mesh.material !== g.asil) g.mesh.material = g.asil; continue; }
+      const anahtar = g.kodlar.join('+');
+      let mal = b.gerMal.get(anahtar);
+      if (!mal) {
+        mal = new T.MeshStandardMaterial({ roughness: 0.5, metalness: 0.15 });
+        mal.kodlar = g.kodlar;
+        b.gerMal.set(anahtar, mal);
+      }
+      if (g.mesh.material !== mal) g.mesh.material = mal;
+    }
+    if (!gerilmeAcik) continue;
+    for (const mal of b.gerMal.values()) {
+      if (kare === null) { mal.color.setHex(0x8a939b); mal.emissive.setHex(0x000000); continue; }
+      const pd = kare ? kare[b.i] : null;
+      const u = pd ? Math.max(...mal.kodlar.map((c) => pd[c].u)) : 0;
+      const [r, g, bb] = rampa(u);
+      mal.color.setRGB(r, g, bb).convertSRGBToLinear();
+      mal.emissive.copy(mal.color).multiplyScalar(0.25);
+    }
+  }
+}
 
 function kareBul(t) {
   const K = S.kayit, N = K.t.length;
@@ -1453,6 +1704,9 @@ function sonucCiz() {
     ['Bacak stroku', yok || (Math.round(o.strok_ayakta_mm) + ' / ' + OLCU.DUSEY_STROK + ' mm')],
     ['Ayak kuvveti', yok || (Math.round(o.N_ayakta_N) + ' N')],
     ['En büyük ivme', yok || (sayi(o.ivme_ayakta_g, 1) + ' g')],
+    ['En zorlanan parça', S.gerZirve
+      ? (() => { const e = enZorlanan(S.gerZirve); return `${e.p.ad} · ${yuzde(e.s.u)} akma`; })()
+      : '—'],
     ['Kalan gaz', sayi(o.gaz_kalan_kg, 2) + ' kg'],
   ];
   let not = s.not;
@@ -1511,6 +1765,13 @@ const GRAFIKLER = [
       { al: (K, f) => K.s[f][2] * 1000, renk: '--uyari', ad: 'bacak 3' }],
     cizgiler: [{ v: OLCU.DUSEY_STROK, et: `metal durak ${OLCU.DUSEY_STROK} mm`,
                  olcekDisi: true }], enAz: 9 },
+  // her bacakta o an en çok zorlanan parçanın gerilmesi; devrildikten sonra yok
+  { id: 'gerilme', ad: 'Bacak gerilmesi (en zorlanan parça)', birim: '% akma', kisa: false,
+    seriler: [['--vurgu', 0], ['--iyi', 1], ['--uyari', 2]].map(([renk, i]) => ({
+      al: (K, f) => (K.gerEnb && K.gerEnb[f] ? K.gerEnb[f][i] * 100 : NaN), renk,
+      ad: 'bacak ' + (i + 1) })),
+    cizgiler: [{ v: 100 * TASARIM_SINIRI, et: 'tasarım sınırı %67' },
+               { v: 100, et: 'akma', olcekDisi: true }], taban: 0 },
   { id: 'valf', ad: '1 numaralı valfin açıklığı', birim: '0–1', kisa: true,
     seriler: [{ al: (K, f) => K.valf[f][0], renk: '--itki', dolgu: true }],
     cizgiler: [], taban: 0, tavan: 1.05 },
@@ -1838,18 +2099,16 @@ function teknikCiz(k) {
   x.clearRect(0, 0, w, h);
   const R = (n) => renkOku(n) || '#888';
 
-  // hangi bacak?
-  let i = bacakSecim;
-  if (i === 'yuk') {
-    i = 0;
-    for (let j = 1; j < 3; j++) if (k.s[j] > k.s[i]) i = j;
-  }
+  const i = seciliBacak(k);
   const s_mm = Math.max(0, Math.min(OLCU.DUSEY_STROK + 8, k.s[i] * 1000));
   const th = bacakAcisi(s_mm);
   const n = bacakNoktalari(th);
   const f = kareIndeks(k.t);
   const Kk = S.kayit;
   const Fa = Kk.Fa[f][i], Nb = Kk.Nb ? Kk.Nb[f][i] : 0, Ft = Kk.Ftb ? Kk.Ftb[f][i] : 0;
+  // gerilme açıkken parçalar 3B'deki gibi boyanır; kapalıyken (ya da devrikken) asıl renk
+  const pd = gerilmeAcik && Kk.ger && Kk.ger[f] ? Kk.ger[f][i] : null;
+  const gr = (...kodlar) => pd ? rampaCss(Math.max(...kodlar.map((c) => pd[c].u))) : null;
 
   // --- ölçek: mm -> piksel ---
   const u0 = -70, w0 = -165, en = 760, boy = 545;
@@ -1889,40 +2148,43 @@ function teknikCiz(k) {
   const P = (p) => [X(p[0]), Y(p[1])];
   const [Dx, Dy] = P(n.D), [Cx, Cy] = P(n.C), [Fx, Fy] = P(n.F);
   x.beginPath(); x.moveTo(Dx, Dy); x.lineTo(Cx, Cy); x.lineTo(Fx, Fy); x.closePath();
-  x.fillStyle = R('--vurgu'); x.globalAlpha = 0.17; x.fill(); x.globalAlpha = 1;
-  x.strokeStyle = R('--vurgu'); x.lineWidth = 2.2; x.stroke();
+  const plakaRenk = gr('P01') || R('--vurgu');
+  x.fillStyle = plakaRenk; x.globalAlpha = pd ? 0.3 : 0.17; x.fill(); x.globalAlpha = 1;
+  x.strokeStyle = plakaRenk; x.lineWidth = pd ? 3 : 2.2; x.stroke();
 
   // --- ayak sapı ve pabuç: bacağa sabit, bacakla birlikte döner; taban kubbeli ---
   const bacakla = ([u, v]) => {          // dönmemiş haldeki noktayı θ kadar döndür
     const [ru, rv] = donustur(u - OLCU.D_U, v - OLCU.D_Z, th);
     return [X(OLCU.D_U + ru), Y(OLCU.D_Z + rv)];
   };
-  const cokgen = (noktalar, opak) => {
+  const cokgen = (noktalar, opak, renk) => {
     x.beginPath();
     noktalar.map(bacakla).forEach(([px, py], j) => (j ? x.lineTo(px, py) : x.moveTo(px, py)));
     x.closePath();
-    x.fillStyle = R('--metin2'); x.globalAlpha = opak; x.fill(); x.globalAlpha = 1;
+    x.fillStyle = renk || R('--metin2'); x.globalAlpha = renk ? 0.85 : opak; x.fill();
+    x.globalAlpha = 1;
     x.strokeStyle = R('--metin2'); x.lineWidth = 1.2; x.stroke();
   };
   const pUst = OLCU.AYAK_TEMAS_Z + OLCU.PAD_T, su = OLCU.SAP_U / 2;
   cokgen([[OLCU.F_U - su, OLCU.F_Z], [OLCU.F_U + su, OLCU.F_Z],
-          [OLCU.F_U + su, pUst], [OLCU.F_U - su, pUst]], 0.3);
+          [OLCU.F_U + su, pUst], [OLCU.F_U - su, pUst]], 0.3, gr('P03'));
   const kubbe = pabucProfili(12).slice(0, -2);          // [r, h], r = 0 .. 50 mm
   cokgen([[-OLCU.PAD_D / 2, OLCU.PAD_T]]
     .concat(kubbe.slice(1).reverse().map(([r, hh]) => [-r, hh]), kubbe,
             [[OLCU.PAD_D / 2, OLCU.PAD_T]])
-    .map(([r, hh]) => [OLCU.F_U + r, OLCU.AYAK_TEMAS_Z + hh]), 0.5);
+    .map(([r, hh]) => [OLCU.F_U + r, OLCU.AYAK_TEMAS_Z + hh]), 0.5, gr('P04'));
 
   // --- amortisör A -> C ---
   const [Ax, Ay] = P(n.A);
-  x.strokeStyle = R('--uyari'); x.lineWidth = 5;
+  x.strokeStyle = gr('P11', 'P12') || R('--uyari'); x.lineWidth = pd ? 7 : 5;
   x.beginPath(); x.moveTo(Ax, Ay); x.lineTo(Cx, Cy); x.stroke();
   x.strokeStyle = R('--yuzey'); x.lineWidth = 1.6;
   x.beginPath(); x.moveTo(Ax, Ay); x.lineTo(Cx, Cy); x.stroke();
-  // mafsal çemberleri
-  for (const [px, py, r] of [[Dx, Dy, 7], [Cx, Cy, 6], [Ax, Ay, 6], [Fx, Fy, 5]]) {
+  // mafsal çemberleri (gerilme açıkken: D pimi, C mafsalı, A mafsalı, ayak düğümü)
+  for (const [px, py, r, kod] of [[Dx, Dy, 7, 'P07'], [Cx, Cy, 6, 'P02'], [Ax, Ay, 6, 'A'],
+                                  [Fx, Fy, 5, 'P03']]) {
     x.beginPath(); x.arc(px, py, r, 0, Math.PI * 2);
-    x.fillStyle = R('--yuzey'); x.fill();
+    x.fillStyle = gr(kod) || R('--yuzey'); x.fill();
     x.strokeStyle = R('--metin'); x.lineWidth = 1.4; x.stroke();
   }
   x.fillStyle = R('--metin2'); x.textAlign = 'right'; x.textBaseline = 'middle';
@@ -2388,6 +2650,57 @@ bacağın üst bağlantısı (A noktası) r = ${Math.round(OLCU.A_U)} mm'de, kar
 alt ucu (C) r = ${Math.round(OLCU.C_U)} mm'de. Egzoz hüzmesi bu bölgeden geçiyor;
 3B görünümde gözle takip edebilirsiniz.</p>`;
 
+  const gerSay = GERILME.kontroller.length;
+  const gerEl = GERILME.kontroller.filter((k) => k.kaynak === 'el').length;
+  $('#gerAciklama').innerHTML = `
+<p>Kısa cevap: <strong>tarayıcıda yeni bir gerilme analizi yapılmıyor.</strong> Renkler,
+iniş takımı için önceden yapılmış ${gerEl} el hesabının ve ${gerSay - gerEl} parçalık sonlu
+eleman analizinin sonuçlarından geliyor; simülasyon onları her an bacaktaki kuvvetle ölçekliyor.</p>
+
+<h4>1. Hangi kuvvet, hangi parça</h4>
+<p>Fizik her an her bacak için üç kuvvet bilir: ayağın <strong>düşey zemin kuvveti</strong>,
+amortisör <strong>kartuşunun kuvveti</strong> ve ayağın <strong>yanal (sürtünme)
+kuvveti</strong>. Her hesap bunlardan hangisiyle büyüdüğünü kendisi yazar: D pimi ve yan
+plakalar düşey kuvvetten (üçgen çerçeve), kartuş, itici ve üst braket kartuş kuvvetinden,
+ayak sapı düşey ve yanal kuvvetin ikisinden yüklenir.</p>
+
+<h4>2. Neden ölçeklemek doğru</h4>
+<p>Bütün hesaplar <em>nihai</em> yükte yapıldı (3 m/s'lik en kötü eğik iniş: ayakta
+${Math.round(GERILME.ref.N)} N düşey, kartuşta ${Math.round(GERILME.ref.Fa)} N). Parçalar
+akma sınırının altında yay gibi çalışır: kuvvet yarıya inerse gerilme de yarıya iner.
+Sonlu eleman analizi 2 m/s'lik tasarım yükünü de aynı yolla bulmuştu. İki istisna hesaba
+katılıyor:</p>
+<ul>
+<li><strong>Pabucun zemine temas basıncı</strong> kuvvetle doğru orantılı değil, kuvvetin
+küp köküyle büyür (Hertz teması): temas alanı da kuvvetle birlikte büyüdüğü için. Bu yüzden
+pabuç küçük yüklerde bile görece yüksek görünür.</li>
+<li><strong>Ön yüklü cıvatalar</strong>: sıkılırken verilen gerilme inişten bağımsızdır. Oran,
+inişin geri kalan payın ne kadarını kullandığını gösterir; yalnız sıkmadan gelen gerilmesi
+olan kontroller (kilit somunu, P10 burcu) listede yoktur.</li>
+</ul>
+
+<h4>3. Renk ne anlatıyor</h4>
+<p>Çubuk ve renk, parçanın en çok zorlanan kontrolünün <strong>akma sınırına oranıdır</strong>:
+%100'de parça kalıcı eğilir (burkulmada eğilip bükülür, kelepçede boru üstünde kayar).
+Sarı, tasarım ölçütünün sınırıdır: 2 m/s'lik inişte akmaya karşı 1,5 emniyet, yani akmanın
+%67'si. Mavi yük yok demektir. Siyah çentik, inişin tamamındaki en yüksek değerdir; fizik
+bunu karelerden çok daha sık adımlarla izler, bu yüzden çubuk o anda çentiğe tam
+ulaşmayabilir.</p>
+
+<h4>4. Sınırlar</h4>
+<ul>
+<li>Bir parçanın içindeki gerilme dağılımı (delik kenarı, köşe) çizilmez; parça tek renk
+alır ve rengi o parçanın en zorlanan noktasıdır.</li>
+<li>Yanal kuvvetin yönü ayrılmaz; hepsi en kötü yönde kabul edilir (ihtiyatlı).</li>
+<li>Roket devrildikten sonra gösterilmez: o kuvvetler gövdenin zemine çarpmasından gelir ve
+bacağın hesaplardaki yük yolu artık geçerli değildir.</li>
+<li>Ölçekleme yalnız akmaya kadar geçerlidir. %100'ün üstündeki sayılar, parça esnemeye devam
+etseydi oluşacak gerilmedir; gerçekte parça o noktada kalıcı eğilir ya da kırılır ve kuvvet başka
+yollara dağılır. Bu sayılar yalnızca sınırın ne kadar aşıldığını gösterir.</li>
+<li>Metal durağa vuruşta kartuş kuvveti çok büyür; renk bunu gösterir, ama o anda parçanın
+gerçekten nasıl davrandığı ancak düşürme testiyle anlaşılır.</li>
+</ul>`;
+
   $('#sinirAciklama').innerHTML = `
 <div class="uyari-kutu"><strong>Bu bir anlama ve gösterme aracıdır, mühendislik
 doğrulaması değildir.</strong> Gerçek doğrulama ancak düşürme testiyle olur:
@@ -2566,6 +2879,8 @@ function dongu() {
     hudGuncelle(k);
     grafikleriCiz(tSim);
     teknikCiz(k);
+    gerilme3B(k);
+    gerilmePanel(k);
   }
   renderer.render(sahne, kamera);
 }
@@ -2586,6 +2901,7 @@ function basla() {
   kumandalariKur();
   senaryolariKur();
   oynaticiKur();
+  gerilmeKur();
   aciklamalariYaz();
   ogeYenile.forEach((f) => f());
   kos();

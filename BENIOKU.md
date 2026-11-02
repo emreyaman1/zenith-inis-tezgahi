@@ -94,6 +94,8 @@ değişince (örneğin tasarım değişip `geometri.js` yenilenince):
 | `SIMULASYONU_AC.bat` | Çift tıklayınca simülasyonu açar; pencere kapanınca durur |
 | `index.html` | Sayfanın kendisi: 3B sahne (three.js), kumandalar, grafikler, açıklamalar |
 | `fizik.js` | Fizik motoru — `hesaplar/sim.py` dosyasının birebir JavaScript karşılığı + soğuk gaz itki sistemi |
+| `gerilme.js` | Anlık gerilme: o anki kuvvetten her parçanın akmaya oranını ve rengini bulur |
+| `gerilme_veri.js` | El hesaplarının ve sonlu eleman analizinin sonuçları — **elle değiştirilmez**, `hesaplar/18_simulator_gerilme.py` üretir |
 | `geometri.js` | Bütün ölçüler (`param.py`, `geometri.json`, `amortisor.json`'dan), kartuş ve amortisör ölçüleri (Airtac'ın resmî 2B resminden) ve bacak kinematiği |
 | `python_referans.py` | `sim.py`'yi tasarım dosyalarındaki değerlerle koşup `referans.json` üretir |
 | `dogrula.mjs` | `fizik.js` ile `sim.py`'yi karşılaştırır; ölçülerin tasarım dosyalarıyla aynı olduğunu da denetler (Node ile) |
@@ -184,6 +186,7 @@ Koşulan testler:
 | 3 | Statik denge | Roket dururken 3 bacağın tepkisi = ağırlık (**%0,0000 hata**); halkaya oturan amortisörün sıkışması analitik değerle aynı |
 | 4 | Yük durumları T1–T8 | Raporda kullanılan sekiz iniş senaryosu (**en büyük sapma %0,004**) |
 | 5 | Enerji dengesi | Serbest düşüşte toplam enerji korunuyor mu (10⁻¹² mertebesinde) |
+| 6 | Anlık gerilme verisi | `gerilme_veri.js` el hesaplarıyla (`el_hesaplari.json`) ve sonlu eleman sonuçlarıyla (`fea_sonuclari.json`) birebir aynı mı; nihai yükte ölçekleme her kontrolün kendi değerini veriyor mu; 2 m/s inişlerde (T5, T8) hiçbir parça akmanın %67'sini, 3 m/s'de (T6) ve eğik inişte (T3) akmayı geçmiyor mu |
 
 Aynı doğrulama **sayfanın içinde de** çalışır: "Doğrulama" bölümündeki düğme
 sekiz testi tarayıcıda koşup Python'un sayılarıyla yan yana gösterir. Başlıktaki
@@ -313,11 +316,63 @@ sekme 2,8 m/s civarında başlıyordu).
   o anki strok, çerçeve dönmesi, amortisör boyu ve sıkışması, amortisör
   kuvveti, ayak düşey/yanal kuvveti sayı olarak yazar. Bacak seçilebilir
   ("en yüklü" seçeneği o an en çok ezilen bacağı takip eder).
-- **Yedi grafik** — irtifa, düşey hız (hedefle birlikte), eğim, lüle itkileri,
-  tüp basıncı, bacak strokları, valf açıklığı. Üzerinde gezinince o andaki
+- **Anlık gerilme** — iniş takımının on parça grubu (yan plakalar, D pimi, C borusu,
+  ayak düğümü, pabuç, kartuş kovanı, itici, A mafsalı, üst ve alt braket) için o anki
+  gerilmenin akma sınırına oranı. 3B modelde ve 2B kesitte parçalar sonlu eleman
+  programlarındaki gibi boyanır (mavi yüksüz → sarı %67 tasarım sınırı → kırmızı akma);
+  panelde her parçanın çubuğu, en zorlanan kontrolü ve inişin tamamındaki en yüksek değeri
+  (çentik) görünür. Sonuç kartı "en zorlanan parça"yı yazar. Ayrıntı aşağıda.
+- **Sekiz grafik** — irtifa, düşey hız (hedefle birlikte), eğim, lüle itkileri,
+  tüp basıncı, bacak strokları, bacak gerilmesi, valf açıklığı. Üzerinde gezinince o andaki
   değerler görünür; tıklayınca grafik büyür ve en büyük/en küçük/temas anı
   değerleri listelenir.
 - **Dokuz hazır senaryo** ve dört grup kaydırıcı.
+
+---
+
+## Anlık gerilme nasıl hesaplanıyor
+
+Tarayıcıda yeni bir gerilme analizi yapılmaz. İniş takımının el hesapları
+(`hesaplar/07_el_hesaplari.py`, 48 kontrol) ve sonlu eleman analizi (`08_fea.py`, 7 parça)
+her parçayı **nihai yükte** (3 m/s en kötü eğik iniş: ayakta 2025 N, kartuşta 6236 N,
+yanal 911 N) hesapladı. Fizik her an her bacak için ayağın düşey kuvvetini, kartuş
+kuvvetini ve yanal kuvveti bilir; her kontrol bunlardan hangisiyle büyüdüğünü kendisi
+yazar (`07`'deki `canli(...)`). Parçalar akmanın altında doğrusal elastik çalıştığı için:
+
+    gerilme(t) = gerilme(nihai) × kuvvet(t) / kuvvet(nihai)
+
+İstisnalar: pabucun Hertz temas basıncı kuvvetin küp köküyle büyür; ön yüklü cıvatalarda
+sıkma gerilmesi sabittir (oran, inişin kalan payın ne kadarını kullandığıdır); yalnız
+sıkmadan gelen kontroller (kilit somunu, P10 burcu) ve yorulma gösterilmez.
+
+Renk/çubuk = parçanın en zorlanan kontrolünün **akma sınırına oranı** (burkulmada
+burkulma yüküne, kelepçede kayma direncine oranı). %67 = tasarım ölçütü (2 m/s'de akmaya
+karşı 1,5 emniyet), %100 = parça kalıcı eğilir. %100'ün üstü yalnız aşımın büyüklüğünü
+gösterir; orada ölçekleme artık geçerli değildir. Roket devrildikten sonra gösterilmez.
+
+Sonuçlar (itki kapalı, `node dogrula.mjs`): en zorlanan parça her inişte ayak pabucunun
+beton zemine temas basıncı — 2 m/s düz %51, 2 m/s + yanal %63, 3 m/s düz %61, 1,5 m/s 10°
+tek bacak %68 (sınır akma). Varsayılan senaryoda (0,10 m/s) %40.
+
+---
+
+## Tasarım değişince simülasyon nasıl güncellenir
+
+Simülasyon tasarımın sayılarını kendisi hesaplamaz; hesap betiklerinin çıktılarından
+kopyalar. Doğrulama (`node dogrula.mjs`) kopya eskiyse "ESKI KALMIS" diye durur.
+
+1. `hesaplar/param.py`'de ölçüyü değiştir, betikleri sırayla koş (ana BENIOKU'daki sıra:
+   01f, 02, 03, 03b, 04, 06, 07, 08 …).
+2. `python python_referans.py` (bu klasörde) — `sim.py`'nin yeni referans sayıları.
+3. `geometri.js`'teki `OLCU` ve `AMORT` sayılarını `hesaplar/geometri.json`, `param.py`
+   ve `amortisor.json`'dan **elle** güncelle (test 0 hangisinin eskidiğini söyler).
+4. `python hesaplar/18_simulator_gerilme.py` — `gerilme_veri.js` kendiliğinden yenilenir.
+   07'ye yeni bir kontrol eklendiyse ve hangi kuvvetle büyüdüğü yazılmadıysa betik durur.
+5. `node dogrula.mjs` — hepsi geçmeli. Sonra internetteki kopyayı güncelle (yukarıda).
+
+Bacağın **biçimi** değişirse (üçgen çerçeve yerine başka bir mekanizma, farklı parça
+sayısı, amortisörün başka yere bağlanması) sayılar yetmez: `fizik.js`'teki bacak modeli,
+`geometri.js`'teki kinematik ve `index.html`'deki 3B/2B çizim de yeniden yazılmalıdır.
 
 ---
 
