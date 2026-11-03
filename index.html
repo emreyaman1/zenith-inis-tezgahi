@@ -1038,12 +1038,17 @@ function roketKur() {
   avi.castShadow = true; g.add(avi);
 
   // --- TF02 Pro lazer irtifa ölçer: aşağı bakar, kontrolcünün gözü budur ---
+  // Eksende, aviyonik kutusunun tabanında (iki P18 dikmesi); alt plakanın altında kalsaydı
+  // duran roket sensörün 10 cm'lik kör bölgesine girerdi. Kutunun içinde kaldığı için
+  // dışarıdan yalnız alt plakadaki ışın penceresi görünür.
+  const la = K.LIDAR_AZ * Math.PI / 180;
+  const lx = mm(K.LIDAR_R) * Math.cos(la), ly = mm(K.LIDAR_R) * Math.sin(la);
   const lidar = new T.Mesh(new T.BoxGeometry(mm(K.LIDAR_GEN[0]),
     mm(K.LIDAR_GEN[1]), boyu(K.LIDAR_Z)), M.lule);
-  lidar.position.z = ortaZ(K.LIDAR_Z);
+  lidar.position.set(lx, ly, ortaZ(K.LIDAR_Z)); lidar.rotation.z = la;
   lidar.castShadow = true; g.add(lidar);
-  const lens = silindir(0.012, 0.012, 0.004, M.vurgu, 14);
-  lens.position.set(0.016, 0, zc(K.LIDAR_Z[0]) - 0.002); g.add(lens);
+  const lens = new T.Mesh(new T.BoxGeometry(mm(K.LIDAR_PENCERE[0]), mm(K.LIDAR_PENCERE[1]), 0.002), M.vurgu);
+  lens.position.set(lx, ly, zc(K.ALT_BLOK_Z[0]) - 0.001); lens.rotation.z = la; g.add(lens);
 
   // --- basınç tüpü: kompozit, Ø175 x 570 mm, 9 litre ---
   const tr = mm(K.TANK_R), tL = boyu(K.TANK_Z);
@@ -2544,8 +2549,8 @@ iniyor. KTR'deki değişiklik doğru bir karardı ve bunu sayıyla görebiliyors
 100 Hz kullanıyor) şu <em>dört</em> ölçümü alır:</p>
 <ul>
 <li><strong>İrtifa</strong> — en alçak ayağın yerden yüksekliği. Gerçekte bunu
-gövdenin altındaki TF02 Pro lazer mesafe ölçer sağlıyor (CAD'de z = 4–30 mm'de,
-aşağı bakıyor).</li>
+TF02 Pro lazer mesafe ölçer sağlıyor (eksende, aviyonik kutusunun tabanında, alt plakadaki
+pencereden aşağı bakıyor; ölçümü IMU'nun verdiği eğimle düzeltilir).</li>
 <li><strong>Düşey hız</strong></li>
 <li><strong>Yönelim</strong> — gövdenin ne kadar yatık olduğu (IMU'dan)</li>
 <li><strong>Açısal hız</strong> — ne kadar hızlı devrildiği (jiroskop)</li>
@@ -2629,7 +2634,7 @@ değil, o montajdan çıkan sayılar:</p>
 <tr><td>İğne valfler (3)</td><td>291 mm</td><td>938 – 991 mm</td><td>step motorlu</td></tr>
 <tr><td>Step motorlar (3)</td><td>258 mm</td><td>937 – 993 mm</td><td>ESS24</td></tr>
 <tr><td>Vinç gözü (U-bolt)</td><td>eksende</td><td>943 – 1049 mm</td><td>roket buradan asılıyor</td></tr>
-<tr><td>TF02 Pro lazer ölçer</td><td>eksende</td><td>4 – 30 mm</td><td>aşağı bakar</td></tr>
+<tr><td>TF02 Pro lazer ölçer</td><td>eksende</td><td>50 – 75 mm</td><td>aşağı bakar; aviyonik kutusunun tabanında (eskiden plakanın altında, 4 – 30 mm)</td></tr>
 <tr><td>Aviyonik kutusu</td><td>—</td><td>42 – 156 mm</td><td>altta</td></tr>
 </tbody></table></div>
 

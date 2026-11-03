@@ -155,7 +155,7 @@ yerleşim `geometri.js` içindeki `KTR` bloğunda.
 | İğne valfler (3) | 291 mm | 938 – 991 mm |
 | Step motorlar (3, ESS24) | 258 mm | 937 – 993 mm |
 | Vinç gözü (U-bolt) | eksende | 943 – 1049 mm |
-| TF02 Pro lazer ölçer | eksende | 4 – 30 mm |
+| TF02 Pro lazer ölçer (aviyonik kutusunun tabanında; eskiden plakanın altında, 4 – 30 mm) | eksende | 50 – 75 mm |
 
 **Öne çıkanlar:** roket açık bir kafes (burun konisi yok); lüleler **üst plakanın
 kollarının ucunda**, r = 300 mm'de; lüleler bacaklarla aynı hizada değil, **60°
@@ -404,8 +404,8 @@ sayısı, amortisörün başka yere bağlanması) sayılar yetmez: `fizik.js`'te
 - **Aviyoniğin irtifa ölçümü en alçak ayağın yerden yüksekliğidir.** Gövde
   12° yatıkken ayaklar açıldığı için bu değer, ağırlık merkezi yüksekliğinden
   10 cm kadar farklıdır; kontrolcü bunu görmezse eğik inişlerde son yaklaşmayı
-  geç başlatır. Gerçekte bu ölçümü gövdenin altındaki TF02 Pro lazer mesafe
-  ölçer sağlıyor.
+  geç başlatır. Gerçekte bu ölçümü eksendeki TF02 Pro lazer mesafe ölçer sağlıyor
+  (aviyonik kutusunun tabanında; okuma IMU'nun verdiği eğimle düzeltilir).
 - **Bacak çerçevesinin ve üst plakanın zemin teması sonradan eklendi.**
   `sim.py` yalnızca ayak ucunu ve gövdeyi (r = 138–141 mm) temas ettiriyordu;
   bacak kollarının ve üst plakanın (r = 291 mm, gövdenin en dış parçası) hiç

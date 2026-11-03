@@ -100,7 +100,10 @@ export const KTR = {
   // ---- alt bolge ----
   ALT_BLOK_R: 140.9, ALT_BLOK_Z: [30.0, 42.0],
   AVIYONIK_Z: [42.0, 155.5], AVIYONIK_GEN: [230.0, 152.2],
-  LIDAR_Z: [4.2, 30.0], LIDAR_GEN: [66.9, 76.8],   // TF02 Pro, asagi bakar
+  // TF02 Pro, asagi bakar. Eski yeri eksende z 4.2-30 idi (alt plakanin altinda); duran roket 10 cm'lik
+  // kor bolgede kaliyordu. 3 Kasim 2026: yine eksende, aviyonik kutusunun tabaninda (mercek 45 mm yukarida);
+  // isin alt plakadaki pencereden gecer (param.py LIDAR_*, PENCERE).
+  LIDAR_Z: [49.5, 75.3], LIDAR_GEN: [37.0, 55.0], LIDAR_AZ: 0.0, LIDAR_R: 0.0, LIDAR_PENCERE: [36.0, 46.0],
   // ---- basinc tupu ve hizalama yuzukleri ----
   TANK_R: 87.5, TANK_Z: [170.0, 740.0],            // kompozit, 9 litre
   ALT_YUZUK_R: 137.6, ALT_YUZUK_Z: [207.5, 215.5],
